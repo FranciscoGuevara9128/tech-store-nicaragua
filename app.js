@@ -340,6 +340,43 @@ async function obtenerProductos() {
   return products;
 }
 
+async function obtenerDatosGenerales() {
+  const cached = localStorage.getItem("tech_datos");
+  if (cached) return JSON.parse(cached);
+  
+  const datos = {
+    nombre: "Tech Store Nicaragua",
+    ubicacion: "Managua, Nicaragua",
+    facebook: "https://facebook.com/",
+    instagram: "https://instagram.com/",
+    whatsapp: "505XXXXXXXX"
+  };
+  localStorage.setItem("tech_datos", JSON.stringify(datos));
+  return datos;
+}
+
+async function aplicarDatosGenerales() {
+  const datos = await obtenerDatosGenerales();
+  
+  const headerTitle = document.querySelector(".logo-container h1");
+  if (headerTitle) headerTitle.textContent = datos.nombre;
+  
+  const footerCopyright = document.getElementById("footer-nombre-copyright");
+  if (footerCopyright) footerCopyright.textContent = "© " + new Date().getFullYear() + " " + datos.nombre;
+  
+  const footerUbicacion = document.getElementById("footer-ubicacion");
+  if (footerUbicacion) footerUbicacion.textContent = "Ubicación: " + datos.ubicacion;
+  
+  const linkFb = document.getElementById("link-facebook");
+  if (linkFb) linkFb.href = datos.facebook;
+  
+  const linkIg = document.getElementById("link-instagram");
+  if (linkIg) linkIg.href = datos.instagram;
+  
+  const linkWa = document.getElementById("link-whatsapp");
+  if (linkWa) linkWa.href = "https://wa.me/" + datos.whatsapp;
+}
+
 // -------------------- ELEMENTOS --------------------
 const heroContainer = document.getElementById("hero-cards");
 const catalogoContainer = document.getElementById("catalogo-container");
@@ -682,6 +719,7 @@ if (btnCatalogo) {
 
 // -------------------- INIT --------------------
 document.addEventListener("DOMContentLoaded", () => {
+  aplicarDatosGenerales();
   if (heroContainer) cargarCategorias();
   if (productSlider) cargarProductos();
 });
@@ -865,6 +903,8 @@ const btnAdmin = document.getElementById("btn-admin");
 const btnAgregar = document.getElementById("btn-agregar-producto");
 const btnEliminar = document.getElementById("btn-eliminar-producto");
 const btnTema = document.getElementById("btn-tema");
+const btnEditarData = document.getElementById("btn-editar-datos");
+const btnEditarProd = document.getElementById("btn-editar-producto");
 
 // Aplicar tema guardado
 const temas = ["", "tema-gamer", "tema-minimalista"];
@@ -877,6 +917,8 @@ function checkAdmin() {
     if(btnAgregar) btnAgregar.style.display = "inline-block";
     if(btnEliminar) btnEliminar.style.display = "inline-block";
     if(btnTema) btnTema.style.display = "inline-block";
+    if(btnEditarData) btnEditarData.style.display = "inline-block";
+    if(btnEditarProd) btnEditarProd.style.display = "inline-block";
   }
 }
 checkAdmin();
@@ -1010,5 +1052,132 @@ if (btnEliminar) {
     };
 
     formOverlay.querySelector(".btn-cancel-del").onclick = () => formOverlay.remove();
+  };
+}
+
+/* -------------------- EDITAR GENERAL -------------------- */
+if (btnEditarData) {
+  btnEditarData.onclick = async () => {
+    const datos = await obtenerDatosGenerales();
+    
+    const formOverlay = document.createElement("div");
+    formOverlay.className = "producto-overlay";
+    formOverlay.innerHTML = `
+      <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left; max-height: 90vh; overflow-y: auto;">
+        <h2 style="color: #17a2b8; text-align: center; margin-bottom: 5px; width: 100%;">📝 Editar Datos Generales</h2>
+        
+        <div class="form-group"><label>Nombre del Negocio</label><input type="text" id="edit-nombre" value="${datos.nombre}"></div>
+        <div class="form-group"><label>Ubicación</label><input type="text" id="edit-ubicacion" value="${datos.ubicacion}"></div>
+        <div class="form-group"><label>Facebook Link</label><input type="text" id="edit-fb" value="${datos.facebook}"></div>
+        <div class="form-group"><label>Instagram Link</label><input type="text" id="edit-ig" value="${datos.instagram}"></div>
+        <div class="form-group"><label>WhatsApp (solo números)</label><input type="text" id="edit-wa" value="${datos.whatsapp}"></div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 15px; width: 100%;">
+          <button class="btn-cancel-edit-data volver-btn" style="margin-top: 0;">Cancelar</button>
+          <button class="btn-confirm-edit-data producto-btn" style="margin-top: 0; margin-left: auto; background: #17a2b8;">Guardar</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(formOverlay);
+
+    formOverlay.querySelector(".btn-confirm-edit-data").onclick = () => {
+      const pNombre = document.getElementById("edit-nombre").value.trim();
+      const pUbi = document.getElementById("edit-ubicacion").value.trim();
+      const pFb = document.getElementById("edit-fb").value.trim();
+      const pIg = document.getElementById("edit-ig").value.trim();
+      const pWa = document.getElementById("edit-wa").value.trim();
+
+      if(!pNombre || !pUbi || !pFb || !pIg || !pWa) return alert("Completa todos los campos.");
+      
+      const nuevosDatos = {
+        nombre: pNombre,
+        ubicacion: pUbi,
+        facebook: pFb,
+        instagram: pIg,
+        whatsapp: pWa
+      };
+      localStorage.setItem("tech_datos", JSON.stringify(nuevosDatos));
+      alert("Datos actualizados correctamente.");
+      formOverlay.remove();
+      aplicarDatosGenerales();
+    };
+
+    formOverlay.querySelector(".btn-cancel-edit-data").onclick = () => formOverlay.remove();
+  };
+}
+
+/* -------------------- EDITAR PRODUCTO -------------------- */
+if (btnEditarProd) {
+  btnEditarProd.onclick = async () => {
+    const productos = await obtenerProductos();
+    
+    const formOverlay = document.createElement("div");
+    formOverlay.className = "producto-overlay";
+    
+    let htmlList = productos.map((p, i) => `
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding:8px 0;">
+        <span><strong>${p.nombre}</strong> <br> <small>$${p.precio}</small></span>
+        <button onclick="editarProd(${i})" style="background:#ffc107; color:black; border:none; border-radius:4px; cursor:pointer; padding:5px 10px;">Editar</button>
+      </div>
+    `).join("");
+
+    formOverlay.innerHTML = `
+      <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left; max-height: 80vh; overflow-y: auto;">
+        <h2 style="color: #ffc107; text-align: center; margin-bottom: 5px; width: 100%;">✏️ Editar Producto</h2>
+        <div id="lista-editar" style="display:flex; flex-direction:column; gap:5px;">${htmlList}</div>
+        <button class="btn-cancel-edit volver-btn" style="margin-top:20px; width:100%;">Cerrar</button>
+      </div>
+    `;
+    document.body.appendChild(formOverlay);
+
+    window.editarProd = (idx) => {
+      const p = productos[idx];
+      const formEdit = document.createElement("div");
+      formEdit.className = "producto-overlay";
+      formEdit.innerHTML = `
+        <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left;">
+          <h2 style="color: #ffc107; text-align: center; margin-bottom: 5px; width: 100%;">✏️ Editando: ${p.nombre}</h2>
+          
+          <div class="form-group"><label>Nombre</label><input type="text" id="edi-nombre" value="${p.nombre}"></div>
+          <div class="form-group"><label>Categoría</label><input type="text" id="edi-categoria" value="${p.categoria}"></div>
+          <div class="form-group"><label>Precio</label><input type="number" id="edi-precio" value="${p.precio}"></div>
+          <div class="form-group"><label>Descripción</label><input type="text" id="edi-descripcion" value="${p.descripcion}"></div>
+
+          <div style="display: flex; justify-content: space-between; margin-top: 15px; width: 100%;">
+            <button class="btn-cancel-edi volver-btn" style="margin-top: 0;">Cancelar</button>
+            <button class="btn-confirm-edi producto-btn" style="margin-top: 0; margin-left: auto; background: #ffc107; color: black;">Guardar Cambios</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(formEdit);
+      
+      formEdit.querySelector(".btn-confirm-edi").onclick = () => {
+        const ediNombre = document.getElementById("edi-nombre").value.trim();
+        const ediCat = document.getElementById("edi-categoria").value.trim();
+        const ediPrecio = document.getElementById("edi-precio").value.trim();
+        const ediDesc = document.getElementById("edi-descripcion").value.trim();
+
+        if(!ediNombre || !ediCat || !ediPrecio || !ediDesc) return alert("Completa todos los campos.");
+        
+        productos[idx] = {
+          nombre: ediNombre,
+          categoria: ediCat,
+          precio: parseFloat(ediPrecio),
+          descripcion: ediDesc
+        };
+        localStorage.setItem("tech_products", JSON.stringify(productos));
+        alert("Producto modificado correctamente.");
+        formEdit.remove();
+        formOverlay.remove();
+        
+        cargarProductos();
+        if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
+        btnEditarProd.click(); // reabrir para mostrar actualizado
+      };
+
+      formEdit.querySelector(".btn-cancel-edi").onclick = () => formEdit.remove();
+    };
+
+    formOverlay.querySelector(".btn-cancel-edit").onclick = () => formOverlay.remove();
   };
 }
