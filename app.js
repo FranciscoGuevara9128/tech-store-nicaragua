@@ -399,7 +399,7 @@ function agendarPedido(product) {
 
   formOverlay.innerHTML = `
     <div class="producto-detalle-profesional" style="max-width: 400px; flex-direction: column; gap: 15px; text-align: left;">
-      <h2 style="color: #003366; text-align: center; margin-bottom: 5px; width: 100%;">📅 Agendar Pedido</h2>
+      <h2 style="color: #003366; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">calendar_month</span> Agendar Pedido</h2>
       <p style="text-align: center; margin-bottom: 10px; color: #555; width: 100%;">Estás agendando: <strong>${product.nombre}</strong></p>
       
       <div class="form-group">
@@ -439,7 +439,7 @@ function agendarPedido(product) {
       return;
     }
 
-    const mensaje = `📅 *Nuevo Pedido Agendado*\n\n🛒 *Producto:* ${product.nombre}\n💰 *Precio:* $${product.precio}\n\n👤 *Nombre:* ${nombre}\n📞 *Número:* ${numero}\n📍 *Ubicación:* ${ubicacion}\n⏰ *Horario:* ${horario}`;
+    const mensaje = `[NUEVO PEDIDO AGENDADO]\n\nProducto: ${product.nombre}\nPrecio: $${product.precio}\n\nCliente: ${nombre}\nContacto: ${numero}\nUbicación: ${ubicacion}\nHorario: ${horario}`;
     enviarWhatsApp(mensaje);
 
     formOverlay.remove();
@@ -458,73 +458,71 @@ function comprarProducto(product) {
   const formOverlay = document.createElement("div");
   formOverlay.className = "producto-overlay";
 
+  const cuentas = {
+    "bac": "XXXX-XXXX-XXXX-XXXX (BAC)",
+    "banpro": "YYYY-YYYY-YYYY-YYYY (Banpro)",
+    "lafise": "ZZZZ-ZZZZ-ZZZZ-ZZZZ (Banco Lafise)",
+    "ficohsa": "WWWW-WWWW-WWWW-WWWW (Banco Ficohsa)"
+  };
+
   formOverlay.innerHTML = `
     <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left;">
-      <h2 style="color: #003366; text-align: center; margin-bottom: 5px; width: 100%;">💳 Checkout (Demo)</h2>
+      <h2 style="color: #003366; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;">
+        <span class="material-symbols-outlined">account_balance</span> Pagar con Transferencia
+      </h2>
       <p style="text-align: center; margin-bottom: 15px; color: #555; width: 100%; font-size: 14px;">
-        Esta es una pasarela de pago de demostración.<br>Estás comprando: <strong>${product.nombre}</strong> ($${product.precio})
+        Estás comprando: <strong>${product.nombre}</strong> ($${product.precio})
       </p>
-      
-      <div class="form-group">
-        <label>Nombre del Titular</label>
-        <input type="text" id="compra-nombre" placeholder="Ej. Juan Pérez">
-      </div>
-      
-      <div class="form-group">
-        <label>Número de Tarjeta (Ficticio)</label>
-        <input type="text" id="compra-tarjeta" placeholder="0000 0000 0000 0000" maxlength="19">
-      </div>
-      
-      <div style="display: flex; gap: 10px;">
-        <div class="form-group" style="flex: 1;">
-          <label>Vencimiento</label>
-          <input type="text" id="compra-vencimiento" placeholder="MM/AA" maxlength="5">
-        </div>
-        <div class="form-group" style="flex: 1;">
-          <label>CVV (Demo)</label>
-          <input type="password" id="compra-cvv" placeholder="123" maxlength="4">
-        </div>
-      </div>
 
       <div class="form-group">
-        <label>Dirección de Envío</label>
-        <input type="text" id="compra-direccion" placeholder="Ej. Managua, Residencial ...">
+        <label>Selecciona tu banco:</label>
+        <select id="select-banco" style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; outline: none;">
+          <option value="" disabled selected>-- Elige un banco --</option>
+          <option value="bac">BAC Credomatic</option>
+          <option value="banpro">Banpro</option>
+          <option value="lafise">Banco Lafise</option>
+          <option value="ficohsa">Banco Ficohsa</option>
+        </select>
+      </div>
+
+      <div id="tutorial-pago" style="display: none; background: #eef7ff; padding: 15px; border-radius: 10px; border-left: 4px solid #00AEEF; margin-top: 10px;">
+        <h3 style="margin-top:0; color:#003366; font-size: 16px;">Pasos para confirmar tu pago:</h3>
+        <ol style="margin-bottom:0; padding-left:20px; color:#444; font-size: 14px; line-height: 1.6;">
+          <li>Transfiere la cantidad exacta de <strong>$${product.precio}</strong> a la siguiente cuenta bancaria:</li>
+          <li style="margin: 10px 0; font-size: 15px; color: #000;"><strong><span id="cuenta-banco-texto"></span></strong></li>
+          <li>Toma una captura de pantalla del recibo o transferencia exitosa.</li>
+          <li>Haz clic en el botón de abajo para enviarnos tu comprobante por WhatsApp y terminar el pedido.</li>
+        </ol>
       </div>
 
       <div style="display: flex; justify-content: space-between; margin-top: 20px; width: 100%;">
         <button class="btn-cerrar-compra volver-btn" style="margin-top: 0; background: #888;">Cancelar</button>
-        <button class="btn-procesar-compra producto-btn" style="margin-top: 0; margin-left: auto; background: #28a745;">Procesar Pago</button>
+        <button class="btn-enviar-comprobante producto-btn" style="margin-top: 0; margin-left: auto; background: #28a745; display: none;"><span class="material-symbols-outlined">send</span> Enviar Comprobante</button>
       </div>
     </div>
   `;
 
   document.body.appendChild(formOverlay);
 
-  formOverlay.querySelector(".btn-procesar-compra").onclick = () => {
-    const nombre = document.getElementById("compra-nombre").value.trim();
-    const tarjeta = document.getElementById("compra-tarjeta").value.trim();
-    const vencimiento = document.getElementById("compra-vencimiento").value.trim();
-    const cvv = document.getElementById("compra-cvv").value.trim();
-    const direccion = document.getElementById("compra-direccion").value.trim();
+  const selectBanco = formOverlay.querySelector("#select-banco");
+  const tutorialPago = formOverlay.querySelector("#tutorial-pago");
+  const cuentaTexto = formOverlay.querySelector("#cuenta-banco-texto");
+  const btnEnviar = formOverlay.querySelector(".btn-enviar-comprobante");
 
-    if (!nombre || !tarjeta || !vencimiento || !cvv || !direccion) {
-      alert("Por favor completa los campos de demostración para continuar.");
-      return;
+  selectBanco.addEventListener("change", (e) => {
+    const banco = e.target.value;
+    if (cuentas[banco]) {
+      cuentaTexto.textContent = cuentas[banco];
+      tutorialPago.style.display = "block";
+      btnEnviar.style.display = "inline-flex";
     }
+  });
 
-    const btnProcesar = formOverlay.querySelector(".btn-procesar-compra");
-    btnProcesar.textContent = "Procesando...";
-    btnProcesar.style.opacity = "0.7";
-    btnProcesar.disabled = true;
-
-    setTimeout(() => {
-      alert("¡Compra de demostración procesada con éxito! (Simulación)");
-      
-      const mensaje = `🛍️ *Comprobante de Compra (Simulación)*\n\n🛒 *Producto:* ${product.nombre}\n💰 *Precio:* $${product.precio}\n\n👤 *Titular:* ${nombre}\n📍 *Envío a:* ${direccion}\n✅ *Estado:* Pago Aprobado (Demo)`;
-      enviarWhatsApp(mensaje);
-      
-      formOverlay.remove();
-    }, 1500);
+  btnEnviar.onclick = () => {
+    const banco = selectBanco.options[selectBanco.selectedIndex].text;
+    const mensaje = `[PAGO POR TRANSFERENCIA]\n\nProducto: ${product.nombre}\nPrecio a pagar: $${product.precio}\nBanco de transferencia: ${banco}\n\n[Adjunta aquí la captura de tu comprobante de pago para procesar el pedido]`;
+    enviarWhatsApp(mensaje);
+    formOverlay.remove();
   };
 
   formOverlay.querySelector(".btn-cerrar-compra").onclick = () => {
@@ -556,11 +554,11 @@ function mostrarProducto(product) {
         <div class="detalle-precio">$${product.precio}</div>
 
         <div class="detalle-acciones">
-          <button class="btn-agendar producto-btn btn-amarillo">📅 Agendar Pedido</button>
-          <button class="btn-comprar producto-btn btn-verde">💳 Comprar Ahora</button>
+          <button class="btn-agendar producto-btn btn-amarillo"><span class="material-symbols-outlined">calendar_month</span> Agendar Pedido</button>
+          <button class="btn-comprar producto-btn btn-verde"><span class="material-symbols-outlined">credit_card</span> Comprar Ahora</button>
         </div>
 
-        <button class="btn-cerrar volver-btn btn-outline">❌ Volver al Catálogo</button>
+        <button class="btn-cerrar volver-btn btn-outline"><span class="material-symbols-outlined">close</span> Volver al Catálogo</button>
       </div>
     </div>
   `;
@@ -976,7 +974,7 @@ if (btnAgregar) {
     formOverlay.className = "producto-overlay";
     formOverlay.innerHTML = `
       <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left;">
-        <h2 style="color: #28a745; text-align: center; margin-bottom: 5px; width: 100%;">➕ Agregar Producto</h2>
+        <h2 style="color: #28a745; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">add_circle</span> Agregar Producto</h2>
         
         <div class="form-group"><label>Nombre</label><input type="text" id="add-nombre"></div>
         <div class="form-group"><label>Categoría</label><input type="text" id="add-categoria" placeholder="Ej. Laptops"></div>
@@ -1033,7 +1031,7 @@ if (btnEliminar) {
 
     formOverlay.innerHTML = `
       <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left; max-height: 80vh; overflow-y: auto;">
-        <h2 style="color: #dc3545; text-align: center; margin-bottom: 5px; width: 100%;">🗑️ Eliminar Producto</h2>
+        <h2 style="color: #dc3545; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">delete</span> Eliminar Producto</h2>
         <div id="lista-borrar" style="display:flex; flex-direction:column; gap:5px;">${htmlList}</div>
         <button class="btn-cancel-del volver-btn" style="margin-top:20px; width:100%;">Cerrar</button>
       </div>
@@ -1064,7 +1062,7 @@ if (btnEditarData) {
     formOverlay.className = "producto-overlay";
     formOverlay.innerHTML = `
       <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left; max-height: 90vh; overflow-y: auto;">
-        <h2 style="color: #17a2b8; text-align: center; margin-bottom: 5px; width: 100%;">📝 Editar Datos Generales</h2>
+        <h2 style="color: #17a2b8; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">settings</span> Editar Datos Generales</h2>
         
         <div class="form-group"><label>Nombre del Negocio</label><input type="text" id="edit-nombre" value="${datos.nombre}"></div>
         <div class="form-group"><label>Ubicación</label><input type="text" id="edit-ubicacion" value="${datos.ubicacion}"></div>
@@ -1123,7 +1121,7 @@ if (btnEditarProd) {
 
     formOverlay.innerHTML = `
       <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left; max-height: 80vh; overflow-y: auto;">
-        <h2 style="color: #ffc107; text-align: center; margin-bottom: 5px; width: 100%;">✏️ Editar Producto</h2>
+        <h2 style="color: #ffc107; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">edit</span> Editar Producto</h2>
         <div id="lista-editar" style="display:flex; flex-direction:column; gap:5px;">${htmlList}</div>
         <button class="btn-cancel-edit volver-btn" style="margin-top:20px; width:100%;">Cerrar</button>
       </div>
@@ -1136,7 +1134,7 @@ if (btnEditarProd) {
       formEdit.className = "producto-overlay";
       formEdit.innerHTML = `
         <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left;">
-          <h2 style="color: #ffc107; text-align: center; margin-bottom: 5px; width: 100%;">✏️ Editando: ${p.nombre}</h2>
+          <h2 style="color: #ffc107; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">edit</span> Editando: ${p.nombre}</h2>
           
           <div class="form-group"><label>Nombre</label><input type="text" id="edi-nombre" value="${p.nombre}"></div>
           <div class="form-group"><label>Categoría</label><input type="text" id="edi-categoria" value="${p.categoria}"></div>
