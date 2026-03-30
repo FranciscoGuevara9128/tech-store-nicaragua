@@ -620,9 +620,9 @@ async function cargarProductos() {
       card.innerHTML = `
         <img src="img/generico.png">
         <h3>${product.nombre}</h3>
-        <p>${product.categoria}</p>
-        <p>${product.descripcion}</p>
-        <p><strong>$${product.precio}</strong></p>
+        <p class="categoria">${product.categoria}</p>
+        <p class="descripcion">${product.descripcion}</p>
+        <p class="precio">$${product.precio}</p>
       `;
 
       card.onclick = () => mostrarProducto(product);
@@ -690,9 +690,9 @@ async function cargarCatalogo(categoria = null, buscar = "") {
       card.innerHTML = `
         <img src="img/generico.png">
         <h3>${product.nombre}</h3>
-        <p>${product.categoria}</p>
-        <p>${product.descripcion}</p>
-        <p><strong>$${product.precio}</strong></p>
+        <p class="categoria">${product.categoria}</p>
+        <p class="descripcion">${product.descripcion}</p>
+        <p class="precio">$${product.precio}</p>
       `;
 
       card.onclick = () => mostrarProducto(product);
