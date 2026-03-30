@@ -1,0 +1,569 @@
+/* -------------------- GENERAL -------------------- */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f4f4f4;
+}
+
+/* -------------------- HEADER -------------------- */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background-color: #003366;
+  color: white;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+}
+
+.logo {
+  width: 50px;
+  margin-right: 10px;
+}
+
+/* 🔥 BOTONES + BUSCADOR */
+.header-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.header-buttons button {
+  padding: 8px 15px;
+  background: #00AEEF;
+  border: none;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.header-buttons button:hover {
+  background: #0077aa;
+}
+
+/* 🔍 BUSCADOR */
+#search-input {
+  width: 0;
+  opacity: 0;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  transition: all 0.3s ease;
+}
+
+#search-input.activo {
+  width: 200px;
+  opacity: 1;
+}
+
+/* -------------------- HERO -------------------- */
+.hero {
+  text-align: center;
+  padding: 3rem 1rem;
+}
+
+.hero-cards {
+  display: flex;
+  gap: 20px;
+  margin-top: 2rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 20px 20px;
+}
+
+.hero-card {
+  background: white;
+  width: 220px;
+  border-radius: 10px;
+  padding: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  text-align: center;
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.hero-card:hover {
+  transform: translateY(-5px) scale(1.05);
+}
+
+/* -------------------- PRODUCTOS -------------------- */
+.productos,
+.catalogo-container {
+  padding: 2rem;
+}
+
+.grid {
+  display: flex;
+  gap: 20px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.card {
+  width: 220px;
+  background: #fff;
+  border-radius: 8px;
+  padding: 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.card:hover {
+  transform: scale(1.05);
+}
+
+/* -------------------- CATÁLOGO -------------------- */
+.catalogo-container {
+  display: none;
+}
+
+.catalogo-container.visible {
+  display: block;
+}
+
+/* -------------------- CONTACTO -------------------- */
+.contacto {
+  background: #003366;
+  color: white;
+  text-align: center;
+  padding: 3rem;
+}
+
+.contacto button {
+  background: #00AEEF;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* -------------------- FAQ -------------------- */
+.faq {
+  padding: 3rem;
+  background: #fff;
+}
+
+.faq h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #003366;
+}
+
+/* 🔥 separa cada item */
+.faq-item {
+  max-width: 600px;
+  margin: 10px auto;
+}
+
+/* 🔥 BOTÓN */
+.faq-question {
+  width: 100%;
+  padding: 15px;
+  background: #eaeaea;
+  border: none;
+  text-align: left;
+  font-size: 16px;
+  cursor: pointer;
+  font-weight: bold;
+  color: #333;
+  border-radius: 5px;
+  transition: all 0.3s ease;
+}
+
+/* 🔥 HOVER AZUL */
+.faq-question:hover {
+  background: #00AEEF;
+  color: white;
+}
+
+/* 🔥 RESPUESTA (ANIMADA) */
+.faq-answer {
+  max-height: 0;
+  overflow: hidden;
+  padding: 0 10px;
+  background: #f9f9f9;
+  border-radius: 0 0 5px 5px;
+  transition: max-height 0.3s ease, padding 0.3s ease;
+}
+
+/* 🔥 CUANDO ESTÁ ACTIVO */
+.faq-item.active .faq-answer {
+  max-height: 200px;
+  padding: 10px;
+}
+
+/* -------------------- ABOUT -------------------- */
+.about {
+  padding: 3rem 1.5rem;
+  background: #f4f6f8;
+  text-align: center;
+}
+
+.about h2 {
+  margin-bottom: 2rem;
+  font-size: 28px;
+  color: #003366;
+}
+
+.about-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 30px;
+  justify-content: center;
+  align-items: center;
+  max-width: 1000px;
+  margin: auto;
+}
+
+/* TEXTO */
+.about-text {
+  flex: 1;
+  min-width: 280px;
+  text-align: left;
+  font-size: 16px;
+  color: #333;
+  line-height: 1.6;
+}
+
+/* FEATURES */
+.about-features {
+  flex: 1;
+  min-width: 280px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+/* TARJETAS */
+.feature {
+  background: white;
+  padding: 15px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* -------------------- FOOTER -------------------- */
+footer {
+  background: #1a1a1a;
+  color: #ccc;
+  text-align: center;
+  padding: 2rem 1rem;
+}
+
+/* TEXTO */
+footer p {
+  margin-bottom: 15px;
+  font-size: 14px;
+}
+
+/* CONTENEDOR REDES */
+.social {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+/* LINKS */
+.social a {
+  text-decoration: none;
+  color: #ccc;
+  font-size: 15px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  transition: 0.3s;
+}
+
+/* HOVER (CONTACTO VISUAL) */
+.social a:hover {
+  background: #00AEEF;
+  color: white;
+}
+
+
+/* -------------------- FORMULARIO -------------------- */
+
+.formulario-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  display: none;
+  /* oculto por defecto */
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.formulario-overlay.visible {
+  display: flex;
+}
+
+.formulario-contenedor {
+  background: #fff;
+  padding: 30px;
+  border-radius: 15px;
+  width: 90%;
+  max-width: 500px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.formulario-contenedor h2 {
+  text-align: center;
+}
+
+.formulario-contenedor input,
+.formulario-contenedor textarea {
+  width: 100%;
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  resize: none;
+}
+
+.form-buttons {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.btn-agendar-final {
+  flex: 1;
+  background: #00AEEF;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.btn-cerrar-form {
+  flex: 1;
+  background: #555;
+  color: #fff;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* -------------------- TEMAS ADICIONALES -------------------- */
+
+/* TEMA GAMER OSCURO */
+body.tema-gamer {
+  background: #121212;
+  color: #e0e0e0;
+  font-family: 'Courier New', Courier, monospace;
+}
+body.tema-gamer header {
+  background: #000;
+  border-bottom: 2px solid #39ff14;
+  color: #39ff14;
+}
+body.tema-gamer header h1 {
+  color: #39ff14;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+body.tema-gamer .header-buttons button {
+  background: #222;
+  border: 1px solid #39ff14;
+  color: #39ff14 !important;
+  border-radius: 0;
+}
+body.tema-gamer .header-buttons button:hover {
+  background: #39ff14;
+  color: #000 !important;
+}
+body.tema-gamer .card, body.tema-gamer .hero-card {
+  background: #1e1e1e;
+  border: 1px solid #333;
+  color: #fff;
+  border-radius: 0;
+  box-shadow: 0 0 10px rgba(57, 255, 20, 0.2);
+}
+body.tema-gamer .card:hover, body.tema-gamer .hero-card:hover {
+  border-color: #39ff14;
+  box-shadow: 0 0 15px rgba(57, 255, 20, 0.6);
+  transform: translateY(-5px);
+}
+body.tema-gamer .contacto, body.tema-gamer footer {
+  background: #000;
+  color: #39ff14;
+  border-top: 1px solid #39ff14;
+}
+body.tema-gamer .contacto button {
+  background: #39ff14;
+  color: #000;
+  border-radius: 0;
+  font-weight: bold;
+}
+body.tema-gamer .faq, body.tema-gamer .about {
+  background: #121212;
+}
+body.tema-gamer .faq-question {
+  background: #1e1e1e;
+  color: #39ff14;
+  border: 1px solid #222;
+  border-radius: 0;
+}
+body.tema-gamer .faq-question:hover, body.tema-gamer .faq-item.active .faq-question {
+  background: #39ff14;
+  color: #000;
+}
+body.tema-gamer .faq-answer {
+  background: #000;
+  color: #ccc;
+  border: 1px dashed #39ff14;
+  border-top: none;
+}
+body.tema-gamer .feature {
+  background: #1e1e1e;
+  color: #39ff14;
+  border-radius: 0;
+  border: 1px dotted #39ff14;
+}
+body.tema-gamer h2 {
+  color: #39ff14;
+}
+body.tema-gamer .social a {
+  color: #39ff14;
+}
+body.tema-gamer .social a:hover {
+  background: #39ff14;
+  color: #000;
+}
+body.tema-gamer .producto-detalle-profesional {
+  background: #000;
+  border: 2px solid #39ff14;
+  color: #fff;
+  border-radius: 0;
+}
+body.tema-gamer .producto-detalle-profesional h2, body.tema-gamer .producto-detalle-profesional label {
+  color: #39ff14 !important;
+}
+body.tema-gamer .hero-cards {
+  gap: 10px;
+}
+body.tema-gamer .hero-card {
+  width: 250px;
+}
+
+/* TEMA MINIMALISTA ELEGANTE */
+body.tema-minimalista {
+  background: #fafafa;
+  color: #333;
+  font-family: 'Georgia', serif;
+}
+body.tema-minimalista header {
+  background: #fff;
+  color: #000;
+  border-bottom: 1px solid #ddd;
+  padding: 20px 40px;
+}
+body.tema-minimalista header h1 {
+  color: #000;
+  font-weight: normal;
+}
+body.tema-minimalista .header-buttons button {
+  background: transparent;
+  color: #000 !important;
+  border: 1px solid #000;
+  border-radius: 20px;
+}
+body.tema-minimalista .header-buttons button:hover {
+  background: #000;
+  color: #fff !important;
+}
+body.tema-minimalista .card, body.tema-minimalista .hero-card {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  border-bottom: 1px solid #ccc;
+  border-radius: 0;
+  text-align: left;
+}
+body.tema-minimalista .card:hover, body.tema-minimalista .hero-card:hover {
+  transform: none;
+  border-bottom: 2px solid #c2a878;
+}
+body.tema-minimalista .grid {
+  gap: 40px;
+}
+body.tema-minimalista .contacto, body.tema-minimalista footer {
+  background: #fff;
+  color: #000;
+  border-top: 1px solid #eee;
+}
+body.tema-minimalista .contacto button {
+  background: #000;
+  color: #c2a878;
+  border-radius: 0;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+body.tema-minimalista .faq, body.tema-minimalista .about {
+  background: #fff;
+}
+body.tema-minimalista .faq-question {
+  background: transparent;
+  border-bottom: 1px solid #ccc;
+  border-radius: 0;
+  color: #000;
+  font-weight: normal;
+}
+body.tema-minimalista .faq-question:hover {
+  color: #c2a878;
+  background: transparent;
+}
+body.tema-minimalista .faq-answer {
+  background: transparent;
+  padding-left: 0;
+}
+body.tema-minimalista .feature {
+  background: #fdfdfd;
+  border-left: 3px solid #c2a878;
+  border-radius: 0;
+  box-shadow: none;
+}
+body.tema-minimalista h2 {
+  color: #000;
+  font-weight: normal;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+body.tema-minimalista .social a {
+  color: #000;
+}
+body.tema-minimalista .social a:hover {
+  color: #c2a878;
+  background: transparent;
+}
+body.tema-minimalista .producto-detalle-profesional {
+  border-radius: 0;
+  border: 1px solid #eee;
+}
+body.tema-minimalista .producto-detalle-profesional h2, body.tema-minimalista .producto-detalle-profesional label {
+  color: #000 !important;
+}
+body.tema-minimalista .hero-cards {
+  justify-content: center;
+  gap: 30px;
+}

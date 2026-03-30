@@ -1,0 +1,1014 @@
+// -------------------- DATOS LOCALES --------------------
+const CATEGORIAS_BD = [
+  "Auriculares Gamer",
+  "Multimedia",
+  "Auriculares Ejecutivos",
+  "Auriculares para la Escucha",
+  "Bancos de Carga",
+  "Teclados",
+  "Motorizados",
+  "Intercomunicadores Ejeas",
+  "Smartwatch",
+  "Cargadores Xiaomi Turbo Charger",
+  "Auriculares de Monitoreo",
+  "Micrófono de Solapa",
+  "Enfriadores Móviles"
+];
+
+const PRODUCTOS_BD = [
+  {
+    "nombre": "P30",
+    "categoria": "Auriculares Gamer",
+    "descripcion": "Auriculares gamer estéreo con sonido envolvente 7.1 virtual, micrófono con cancelación de ruido omnidireccional y luces LED integradas. Almohadillas de espuma viscoelástica para largas sesiones.",
+    "precio": 20
+  },
+  {
+    "nombre": "P36 Cobra",
+    "categoria": "Auriculares Gamer",
+    "descripcion": "Audífonos gaming premium con drivers de 50mm para graves profundos. Micrófono flexible, estructura de metal reforzado y control de volumen en el cable trenzado ultrarresistente.",
+    "precio": 25
+  },
+  {
+    "nombre": "P50",
+    "categoria": "Auriculares Gamer",
+    "descripcion": "Headset de alta precisión con audio espacial, diadema autoajustable y orejeras transpirables. Cuenta con conectividad USB multiplataforma y aislamiento acústico pasivo avanzado.",
+    "precio": 30
+  },
+  {
+    "nombre": "K89",
+    "categoria": "Auriculares Gamer",
+    "descripcion": "Audífonos competitivos ligeros con tecnología de baja latencia. Sistema de iluminación RGB vibrante, micrófono abatible con mute automático y conector jack de 3.5mm.",
+    "precio": 22
+  },
+  {
+    "nombre": "Zombiescast B5",
+    "categoria": "Auriculares Gamer",
+    "descripcion": "Auriculares over-ear con vibración háptica inmersiva, sonido estéreo de alta resolución y micrófono desmontable. Ideales para setups de streaming gracias a su diseño vanguardista.",
+    "precio": 28
+  },
+  {
+    "nombre": "Inva",
+    "categoria": "Auriculares Gamer",
+    "descripcion": "Diseño ultraligero de 250g pensado para torneos eSports. Drivers magnéticos de neodimio, cable mallado anti-enredos y compatibilidad total con PC, PS5 y Xbox.",
+    "precio": 20
+  },
+  {
+    "nombre": "X35",
+    "categoria": "Auriculares Gamer",
+    "descripcion": "Disfruta de sonido cristalino con los X35. Integran diafragmas optimizados para frecuencias medias y altas, RGB dinámico de 16 millones de colores y estructura ergonómica.",
+    "precio": 24
+  },
+  {
+    "nombre": "H03",
+    "categoria": "Auriculares Gamer",
+    "descripcion": "Auriculares entry-level de alto valor. Sonido estéreo 2.0 balanceado, bajos potenciados, micrófono pivotante y almohadillas de ecocuero súper suaves para máxima comodidad.",
+    "precio": 19
+  },
+  {
+    "nombre": "Auriculares Dobles M22",
+    "categoria": "Multimedia",
+    "descripcion": "Audífonos in-ear alámbricos ideales para multimedia. Cable reforzado en TPE de 1.2 metros, impedancia de 16 ohmios y calidad de audio superior con graves acentuados.",
+    "precio": 25
+  },
+  {
+    "nombre": "Auriculares Dobles DX-42",
+    "categoria": "Multimedia",
+    "descripcion": "Ofrecen un escenario sonoro amplio para música y películas. Sensibilidad de 105dB, conector bañado en oro, control multimedia con respuesta háptica y diseño resistente al sudor.",
+    "precio": 27
+  },
+  {
+    "nombre": "Auriculares A9 Pro",
+    "categoria": "Multimedia",
+    "descripcion": "Auriculares TWS Bluetooth 5.3 con cancelación activa de ruido (ANC). Autonomía de hasta 6 horas continuas, estuche de carga inteligente y control táctil capacitivo.",
+    "precio": 30
+  },
+  {
+    "nombre": "Auriculares M20 Pro",
+    "categoria": "Multimedia",
+    "descripcion": "Tecnología Bluetooth de última generación con bajos tipo subwoofer. Emparejamiento automático, protección IPX5 contra agua y pantalla LED indicadora de batería en el estuche.",
+    "precio": 28
+  },
+  {
+    "nombre": "Auriculares N35 Pro",
+    "categoria": "Multimedia",
+    "descripcion": "Reducción de ruido ambiental ENC para llamadas claras. Baja latencia de 65ms ideal para juegos móviles, diseño ergonómico in-ear con almohadillas de silicona premium.",
+    "precio": 30
+  },
+  {
+    "nombre": "Auriculares YD03",
+    "categoria": "Multimedia",
+    "descripcion": "Auriculares Bluetooth con diseño elegante y pantalla LED en formato espejo. Controles táctiles integrados, sonido hifi estéreo 9D y carga rápida a través de Type-C.",
+    "precio": 22
+  },
+  {
+    "nombre": "Auriculares YD04",
+    "categoria": "Multimedia",
+    "descripcion": "Auriculares deportivos compactos con hasta 5 horas de autonomía. Micrófono HD incorporado, protección contra salpicaduras y bajos potenciados para disfrutar cada canción.",
+    "precio": 23
+  },
+  {
+    "nombre": "YYK-520",
+    "categoria": "Auriculares Ejecutivos",
+    "descripcion": "Auricular manos libres Bluetooth 5.1 con brazo giratorio de 180° para ambas orejas. Batería de gran capacidad de 500mAh con estuche tipo ejecutivo y reducción de viento.",
+    "precio": 35
+  },
+  {
+    "nombre": "YYK-525",
+    "categoria": "Auriculares Ejecutivos",
+    "descripcion": "Manos libres premium para negocios con micrófono doble para ENC. Diseño ultradelgado, comandos de voz inteligentes y autonomía de hasta 12 horas en conversación continua.",
+    "precio": 38
+  },
+  {
+    "nombre": "Intrauditivo Individual Z-360BT",
+    "categoria": "Auriculares para la Escucha",
+    "descripcion": "Auricular individual discreto con Bluetooth 5.0. Pesa tan solo 3 gramos, ajuste invisible e incorpora un botón multifunción para gestionar música y llamadas de forma discreta.",
+    "precio": 15
+  },
+  {
+    "nombre": "Powerbank de 50 mil MAP con panel y carga corriente",
+    "categoria": "Bancos de Carga",
+    "descripcion": "Cargador portátil de 50,000 mAh reales con linterna LED brillante. Incluye pequeño panel solar de respaldo para emergencias, 4 salidas USB simultáneas y protección de sobrevoltaje.",
+    "precio": 40
+  },
+  {
+    "nombre": "Powerbank de 50 mil MAP carga corriente",
+    "categoria": "Bancos de Carga",
+    "descripcion": "Inmensa capacidad de reserva: hasta 10 cargas completas para smartphones promedio. Carga rápida bidireccional de 22.5W, pantalla digital LCD e indicador inteligente de carga segura.",
+    "precio": 35
+  },
+  {
+    "nombre": "Mini Teclado Bluetooth Recargable",
+    "categoria": "Teclados",
+    "descripcion": "Teclado ultra delgado (7mm) y ligero. Switch de tijera silencioso, batería recargable vía Micro USB que dura semanas, y compatible de forma nativa con Android, iOS, Windows y Mac.",
+    "precio": 18
+  },
+  {
+    "nombre": "Combo Teclado Puerto USB - Baterías",
+    "categoria": "Teclados",
+    "descripcion": "Set inálambrico 2.4GHz Plug & Play que incluye teclado completo de 104 teclas y ratón óptico de 1200 DPI. Receptor USB unificado y diseño resistente a salpicaduras.",
+    "precio": 20
+  },
+  {
+    "nombre": "Holder Araña Anti Vibración de Manubrio",
+    "categoria": "Motorizados",
+    "descripcion": "Soporte para celulares de aleación de plástico rígido. Diseño de araña estabilizadora que absorbe fuertes vibraciones, rotación 360° y compatible con teléfonos de 4 a 7 pulgadas.",
+    "precio": 15
+  },
+  {
+    "nombre": "Holder Araña Anti Vibración con Carga Tipo C y MagSafe de Agarre al Espejo",
+    "categoria": "Motorizados",
+    "descripcion": "Soporte avanzado para motocicleta al espejo retrovisor. Incluye puerto USB y Tipo C incorporado para carga rápida directa en ruta y compatibilidad magnética estilo MagSafe.",
+    "precio": 30
+  },
+  {
+    "nombre": "Holder de Araña",
+    "categoria": "Motorizados",
+    "descripcion": "Soporte tipo araña tradicional de silicona flexible y elástica. Adaptable a cualquier tipo de manubrio, sujetando las cuatro esquinas del dispositivo sin bloquear botones o pantallas.",
+    "precio": 12
+  },
+  {
+    "nombre": "Holdr Porta Vaso",
+    "categoria": "Motorizados",
+    "descripcion": "Accesorio rígido de montaje en manubrio o defensas para llevar botellas, vasos térmicos o bebidas. Interior de goma antideslizante para evitar que el contenido se derrame con el viento.",
+    "precio": 10
+  },
+  {
+    "nombre": "Holder para Carro",
+    "categoria": "Motorizados",
+    "descripcion": "Soporte ajustable universal para parabrisas o tablero de auto mediante ventosa de gel adherente súper fuerte. Brazo extensible telescópico y mecanismo de liberación de un solo botón.",
+    "precio": 14
+  },
+  {
+    "nombre": "Auriculares para Casco BT12",
+    "categoria": "Motorizados",
+    "descripcion": "Sistema Bluetooth 5.0 ultradelgado diseñado para el interior de cascos abatibles y completos. Respuesta automática de llamadas y sonido de graves mejorados sin cables molestos.",
+    "precio": 25
+  },
+  {
+    "nombre": "Auriculares para Casco BT35",
+    "categoria": "Motorizados",
+    "descripcion": "Audio inalámbrico para motos con sistema inteligente antipolvo y resistente a salpicaduras ligeras. Micrófono de barra rígida moldeable, reduce ruidos del viento a más de 80km/h.",
+    "precio": 28
+  },
+  {
+    "nombre": "Auriculares para Casco Y30",
+    "categoria": "Motorizados",
+    "descripcion": "Conectividad estéreo de alta fidelidad, excelente para viajes largos en moto. Incorpora altavoces mejorados Hi-Fi y botones grandes exteriores fáciles de presionar incluso con guantes.",
+    "precio": 30
+  },
+  {
+    "nombre": "Intercomunicador Y13 Pro",
+    "categoria": "Motorizados",
+    "descripcion": "Intercom para motociclistas con radio FM integrada, alcance de hasta 50 metros. Permite conectar el celular para música, GPS y cuenta con resistencia al agua IPX6.",
+    "precio": 35
+  },
+  {
+    "nombre": "Intercomunicador Y20 Max",
+    "categoria": "Motorizados",
+    "descripcion": "Sistema de intercomunicación 2 vías potente para piloto-copiloto o comunicación entre motos corta. DSP de ruido, hasta 1000 horas de standby y comandos por asistente de voz.",
+    "precio": 40
+  },
+  {
+    "nombre": "Intercomunicador Y80 2X",
+    "categoria": "Motorizados",
+    "descripcion": "Intercomunicador dual band Full-Duplex que permite conectar con múltiples motocicletas (hasta 2 de forma simultánea). Certificación IP67 ideal para lluvias torrenciales y viajes extremos.",
+    "precio": 45
+  },
+  {
+    "nombre": "Cargador de Moto (USB-USB) (USB-Tipo C)",
+    "categoria": "Motorizados",
+    "descripcion": "Toma de corriente dual instalable en el manillar o fusibles de moto. 12V-24V con salida inteligente 3.1A para puerto tipo A y Tipo C simultáneamente. Incluye tapa impermeable.",
+    "precio": 15
+  },
+  {
+    "nombre": "EJEAS V6 Pro",
+    "categoria": "Intercomunicadores Ejeas",
+    "descripcion": "El estándar de oro en comunicación. Intercom Bluetooth de hasta 1200m de alcance, soporta hasta 6 motociclistas rotativos. DSP de alta velocidad y batería de 850mAh.",
+    "precio": 40
+  },
+  {
+    "nombre": "EJEAS Q7",
+    "categoria": "Intercomunicadores Ejeas",
+    "descripcion": "Sistema Bluetooth 5.1 que empareja y activa intercom al instante en 1 segundo. Chip Qualcomm avanzado, cancelación de ruido CVC e impermeable IP65. Alcance comprobado de 800m.",
+    "precio": 35
+  },
+  {
+    "nombre": "EJEAS Q8",
+    "categoria": "Intercomunicadores Ejeas",
+    "descripcion": "Modelo insignia con tecnología Mesh para comunicación simultánea con hasta 6 pilotos de manera ininterrumpida. Calidad de audio estéreo 3D y sistema de auto-reconexión si alguien sale del rango.",
+    "precio": 38
+  },
+  {
+    "nombre": "EJEAS K1",
+    "categoria": "Intercomunicadores Ejeas",
+    "descripcion": "Unidad de intercomunicación compacta y delgada, ideal para no comprometer la estética del casco. Soporta 2 pasajeros simultáneos, alcance de 500m con conexión HD continua.",
+    "precio": 30
+  },
+  {
+    "nombre": "EJEAS X10",
+    "categoria": "Intercomunicadores Ejeas",
+    "descripcion": "Cámara y comunicador 2 en 1. Grabación de video Full HD 1080p con lente gran angular, comunicación Bluetooth simultánea y batería masiva para registros largos de tus viajes moteros.",
+    "precio": 42
+  },
+  {
+    "nombre": "Smartwatch I90 Suit Extreme",
+    "categoria": "Smartwatch",
+    "descripcion": "Reloj inteligente ultrarresistente tipo deportivo-militar. Monitor de frecuencia cardíaca 24/7, medición de oxígeno en sangre, certificación IP68 y más de 100 modos deportivos.",
+    "precio": 50
+  },
+  {
+    "nombre": "Smartwatch Howear Ultra 2 Call 5G",
+    "categoria": "Smartwatch",
+    "descripcion": "Pantalla AMOLED infinita de alta resolución y cristal de zafiro. Compatible con recepción de llamadas vía Bluetooth de alta fidelidad, notificaciones en tiempo real corporativas y GPS.",
+    "precio": 70
+  },
+  {
+    "nombre": "Cargador de 33W",
+    "categoria": "Cargadores Xiaomi Turbo Charger",
+    "descripcion": "Cargador rápido Xiaomi original 33W QC3.0. Tecnología de control de temperatura de múltiples capas inteligente, ideal para cargar la mitad tu batería en 30 minutos. Compatible y seguro.",
+    "precio": 20
+  },
+  {
+    "nombre": "Cargador de 67W",
+    "categoria": "Cargadores Xiaomi Turbo Charger",
+    "descripcion": "Cargador avanzado Xiaomi 67W. Incluye cable USB a Tipo C de 6 amperios. Carga completa del dispositivo en menos de 45 minutos. Componentes de nitruro de galio (GaN) anti-calentamiento.",
+    "precio": 30
+  },
+  {
+    "nombre": "Cargador de 120W",
+    "categoria": "Cargadores Xiaomi Turbo Charger",
+    "descripcion": "La máxima velocidad de carga. HyperCharge Xiaomi 120W. Lleva tu teléfono del 0% al 100% en tan solo 15-20 minutos. El bloque incluye chip de protección de 9 niveles contra descargas.",
+    "precio": 50
+  },
+  {
+    "nombre": "INEAR ZXT (Púrpura, Negro, Transparente)",
+    "categoria": "Auriculares de Monitoreo",
+    "descripcion": "Monitores de estudio in-ear con arquitectura de drivers dinámicos compuestos. Afinación acústica plana para músicos y productores, reducción de ruido pasiva extrema y calce ergonómico seguro.",
+    "precio": 25
+  },
+  {
+    "nombre": "INEAR ODIN",
+    "categoria": "Auriculares de Monitoreo",
+    "descripcion": "Avanzados monitores in-ear con sistema de múltiple balanceo. Respuesta en frecuencias sumamente detallada, logrando resaltar cada instrumento en vivo con su sonido analítico cristalino.",
+    "precio": 28
+  },
+  {
+    "nombre": "Cable Múltiple ODIN Q7",
+    "categoria": "Auriculares de Monitoreo",
+    "descripcion": "Cable de reemplazo OFC bañado en plata para monitores in-ear. Núcleo trenzado de 4 hilos sin enredos que mejora exponencialmente la transmisión de la señal auditiva minimizando interferencias.",
+    "precio": 15
+  },
+  {
+    "nombre": "Cable de Repuesto: Con/Sin Micrófono",
+    "categoria": "Auriculares de Monitoreo",
+    "descripcion": "Cable universal estándar de 2 pines y jack de 3.5mm para monitores intrauditivos. Seleccionable en versión con control de llamadas incluido o cable de audio directo clásico.",
+    "precio": 10
+  },
+  {
+    "nombre": "Micrófono K15 (Entrada Tipo C -Plus-iPhone)",
+    "categoria": "Micrófono de Solapa",
+    "descripcion": "Sistema de micrófono inalámbrico Lavalier recargable 2.4GHz Plug & Play. Rango eficaz de recepción de 20 metros sin delays. Ideal para grabar TikTok, vlogs, entrevistas o transmisiones en directo.",
+    "precio": 20
+  },
+  {
+    "nombre": "Micrófono K61 (Tipo C)",
+    "categoria": "Micrófono de Solapa",
+    "descripcion": "Micrófono condenser para PC o móviles Tipo-C. Incorpora patrón polar omnidireccional con espuma corta viento de alta densidad y sujeción tipo corbata firme de metal premium.",
+    "precio": 25
+  },
+  {
+    "nombre": "Enfriador CX07",
+    "categoria": "Enfriadores Móviles",
+    "descripcion": "Cooler semiconductor magnético avanzado para teléfonos móviles. Efecto de refrigeración extrema para largas jornadas prolongadas de gaming, evitando caídas de fotogramas por Thermal Throttling.",
+    "precio": 15
+  },
+  {
+    "nombre": "Enfriador DL05",
+    "categoria": "Enfriadores Móviles",
+    "descripcion": "Ventilador enfriador RGB con abrazaderas extensibles, capaz de bajar la temperatura del teléfono hasta 10 grados en 3 minutos. Cuenta con pantalla de temperatura digital LCD y diseño silencioso.",
+    "precio": 18
+  }
+];
+
+// -------------------- ADMIN CACHE --------------------
+async function obtenerProductos() {
+  const cached = localStorage.getItem("tech_products");
+  if (cached) return JSON.parse(cached);
+  
+  const products = PRODUCTOS_BD;
+  localStorage.setItem("tech_products", JSON.stringify(products));
+  return products;
+}
+
+// -------------------- ELEMENTOS --------------------
+const heroContainer = document.getElementById("hero-cards");
+const catalogoContainer = document.getElementById("catalogo-container");
+const catalogoGrid = document.getElementById("catalogo-grid");
+const productSlider = document.getElementById("product-slider");
+const searchInput = document.getElementById("search-input");
+const btnCatalogo = document.getElementById("btn-catalogo");
+const btnBuscar = document.getElementById("btn-buscar");
+
+// -------------------- WHATSAPP --------------------
+function enviarWhatsApp(mensaje) {
+  const numero = "50576112321";
+  const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
+  window.open(url, "_blank");
+}
+
+function agendarPedido(product) {
+  const formOverlay = document.createElement("div");
+  formOverlay.className = "producto-overlay";
+
+  formOverlay.innerHTML = `
+    <div class="producto-detalle-profesional" style="max-width: 400px; flex-direction: column; gap: 15px; text-align: left;">
+      <h2 style="color: #003366; text-align: center; margin-bottom: 5px; width: 100%;">📅 Agendar Pedido</h2>
+      <p style="text-align: center; margin-bottom: 10px; color: #555; width: 100%;">Estás agendando: <strong>${product.nombre}</strong></p>
+      
+      <div class="form-group">
+        <label>Nombre completo</label>
+        <input type="text" id="agenda-nombre" placeholder="Ej. Juan Pérez">
+      </div>
+      <div class="form-group">
+        <label>Número de WhatsApp</label>
+        <input type="tel" id="agenda-numero" placeholder="Ej. 8888-8888">
+      </div>
+      <div class="form-group">
+        <label>Ubicación</label>
+        <input type="text" id="agenda-ubicacion" placeholder="Ej. Managua, Linda Vista">
+      </div>
+      <div class="form-group">
+        <label>Horario</label>
+        <input type="text" id="agenda-horario" placeholder="Ej. Por la mañana, 10 AM">
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 15px; width: 100%;">
+        <button class="btn-cerrar-form volver-btn" style="margin-top: 0;">Cancelar</button>
+        <button class="btn-enviar-agenda producto-btn" style="margin-top: 0; margin-left: auto;">Confirmar y Enviar</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(formOverlay);
+
+  formOverlay.querySelector(".btn-enviar-agenda").onclick = () => {
+    const nombre = document.getElementById("agenda-nombre").value.trim();
+    const numero = document.getElementById("agenda-numero").value.trim();
+    const ubicacion = document.getElementById("agenda-ubicacion").value.trim();
+    const horario = document.getElementById("agenda-horario").value.trim();
+
+    if (!nombre || !numero || !ubicacion || !horario) {
+      alert("Por favor completa todos los campos para poder agendar.");
+      return;
+    }
+
+    const mensaje = `📅 *Nuevo Pedido Agendado*\n\n🛒 *Producto:* ${product.nombre}\n💰 *Precio:* $${product.precio}\n\n👤 *Nombre:* ${nombre}\n📞 *Número:* ${numero}\n📍 *Ubicación:* ${ubicacion}\n⏰ *Horario:* ${horario}`;
+    enviarWhatsApp(mensaje);
+
+    formOverlay.remove();
+  };
+
+  formOverlay.querySelector(".btn-cerrar-form").onclick = () => {
+    formOverlay.remove();
+  };
+
+  formOverlay.addEventListener("click", (e) => {
+    if (e.target === formOverlay) formOverlay.remove();
+  });
+}
+
+function comprarProducto(product) {
+  const formOverlay = document.createElement("div");
+  formOverlay.className = "producto-overlay";
+
+  formOverlay.innerHTML = `
+    <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left;">
+      <h2 style="color: #003366; text-align: center; margin-bottom: 5px; width: 100%;">💳 Checkout (Demo)</h2>
+      <p style="text-align: center; margin-bottom: 15px; color: #555; width: 100%; font-size: 14px;">
+        Esta es una pasarela de pago de demostración.<br>Estás comprando: <strong>${product.nombre}</strong> ($${product.precio})
+      </p>
+      
+      <div class="form-group">
+        <label>Nombre del Titular</label>
+        <input type="text" id="compra-nombre" placeholder="Ej. Juan Pérez">
+      </div>
+      
+      <div class="form-group">
+        <label>Número de Tarjeta (Ficticio)</label>
+        <input type="text" id="compra-tarjeta" placeholder="0000 0000 0000 0000" maxlength="19">
+      </div>
+      
+      <div style="display: flex; gap: 10px;">
+        <div class="form-group" style="flex: 1;">
+          <label>Vencimiento</label>
+          <input type="text" id="compra-vencimiento" placeholder="MM/AA" maxlength="5">
+        </div>
+        <div class="form-group" style="flex: 1;">
+          <label>CVV (Demo)</label>
+          <input type="password" id="compra-cvv" placeholder="123" maxlength="4">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Dirección de Envío</label>
+        <input type="text" id="compra-direccion" placeholder="Ej. Managua, Residencial ...">
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 20px; width: 100%;">
+        <button class="btn-cerrar-compra volver-btn" style="margin-top: 0; background: #888;">Cancelar</button>
+        <button class="btn-procesar-compra producto-btn" style="margin-top: 0; margin-left: auto; background: #28a745;">Procesar Pago</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(formOverlay);
+
+  formOverlay.querySelector(".btn-procesar-compra").onclick = () => {
+    const nombre = document.getElementById("compra-nombre").value.trim();
+    const tarjeta = document.getElementById("compra-tarjeta").value.trim();
+    const vencimiento = document.getElementById("compra-vencimiento").value.trim();
+    const cvv = document.getElementById("compra-cvv").value.trim();
+    const direccion = document.getElementById("compra-direccion").value.trim();
+
+    if (!nombre || !tarjeta || !vencimiento || !cvv || !direccion) {
+      alert("Por favor completa los campos de demostración para continuar.");
+      return;
+    }
+
+    const btnProcesar = formOverlay.querySelector(".btn-procesar-compra");
+    btnProcesar.textContent = "Procesando...";
+    btnProcesar.style.opacity = "0.7";
+    btnProcesar.disabled = true;
+
+    setTimeout(() => {
+      alert("¡Compra de demostración procesada con éxito! (Simulación)");
+      
+      const mensaje = `🛍️ *Comprobante de Compra (Simulación)*\n\n🛒 *Producto:* ${product.nombre}\n💰 *Precio:* $${product.precio}\n\n👤 *Titular:* ${nombre}\n📍 *Envío a:* ${direccion}\n✅ *Estado:* Pago Aprobado (Demo)`;
+      enviarWhatsApp(mensaje);
+      
+      formOverlay.remove();
+    }, 1500);
+  };
+
+  formOverlay.querySelector(".btn-cerrar-compra").onclick = () => {
+    formOverlay.remove();
+  };
+
+  formOverlay.addEventListener("click", (e) => {
+    if (e.target === formOverlay) formOverlay.remove();
+  });
+}
+
+// -------------------- MODAL PRODUCTO --------------------
+function mostrarProducto(product) {
+  cerrarDetalle();
+
+  const overlay = document.createElement("div");
+  overlay.className = "producto-overlay";
+
+  overlay.innerHTML = `
+    <div class="producto-detalle-profesional">
+      <div class="detalle-imagen">
+        <img src="img/generico.png">
+      </div>
+
+      <div class="detalle-info">
+        <h2 class="detalle-titulo">${product.nombre}</h2>
+        <div class="detalle-categoria"><span>Categoría:</span> ${product.categoria}</div>
+        <p class="detalle-desc">${product.descripcion}</p>
+        <div class="detalle-precio">$${product.precio}</div>
+
+        <div class="detalle-acciones">
+          <button class="btn-agendar producto-btn btn-amarillo">📅 Agendar Pedido</button>
+          <button class="btn-comprar producto-btn btn-verde">💳 Comprar Ahora</button>
+        </div>
+
+        <button class="btn-cerrar volver-btn btn-outline">❌ Volver al Catálogo</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  document.body.style.overflow = "hidden";
+
+  overlay.querySelector(".btn-agendar").onclick = () => agendarPedido(product);
+  overlay.querySelector(".btn-comprar").onclick = () => comprarProducto(product);
+  overlay.querySelector(".btn-cerrar").onclick = cerrarDetalle;
+
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) cerrarDetalle();
+  });
+}
+
+function cerrarDetalle() {
+  const overlay = document.querySelector(".producto-overlay");
+  if (overlay) overlay.remove();
+  document.body.style.overflow = "auto";
+}
+
+// -------------------- CATEGORÍAS --------------------
+async function cargarCategorias() {
+  try {
+    const categories = CATEGORIAS_BD;
+
+    heroContainer.innerHTML = "";
+
+    categories.forEach(categoria => {
+      const card = document.createElement("div");
+      card.className = "hero-card";
+
+      card.innerHTML = `
+        <img src="img/generico.png">
+        <h3>${categoria}</h3>
+      `;
+
+      card.onclick = () => cargarCatalogo(categoria);
+      heroContainer.appendChild(card);
+    });
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// -------------------- PRODUCTOS --------------------
+async function cargarProductos() {
+  try {
+    const products = await obtenerProductos();
+
+    productSlider.innerHTML = "";
+
+    products.slice(0, 3).forEach(product => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      card.innerHTML = `
+        <img src="img/generico.png">
+        <h3>${product.nombre}</h3>
+        <p>${product.categoria}</p>
+        <p>${product.descripcion}</p>
+        <p><strong>$${product.precio}</strong></p>
+      `;
+
+      card.onclick = () => mostrarProducto(product);
+      productSlider.appendChild(card);
+    });
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// -------------------- BUSCADOR --------------------
+function ejecutarBusqueda() {
+  const query = searchInput.value.trim();
+  cargarCatalogo(null, query);
+}
+
+// Mostrar input / buscar
+if (btnBuscar && searchInput) {
+  btnBuscar.addEventListener("click", () => {
+
+    if (!searchInput.classList.contains("activo")) {
+      searchInput.classList.add("activo");
+      searchInput.focus();
+    } else {
+      ejecutarBusqueda();
+    }
+
+  });
+}
+
+// ENTER
+if (searchInput) {
+  searchInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      ejecutarBusqueda();
+    }
+  });
+}
+
+// -------------------- CATÁLOGO --------------------
+async function cargarCatalogo(categoria = null, buscar = "") {
+  try {
+    const products = await obtenerProductos();
+
+    catalogoGrid.innerHTML = "";
+
+    let filtrados = products;
+
+    if (categoria) {
+      filtrados = filtrados.filter(p => p.categoria === categoria);
+    }
+
+    if (buscar) {
+      filtrados = filtrados.filter(p =>
+        p.nombre.toLowerCase().includes(buscar.toLowerCase())
+      );
+    }
+
+    filtrados.forEach(product => {
+      const card = document.createElement("div");
+      card.className = "card";
+
+      card.innerHTML = `
+        <img src="img/generico.png">
+        <h3>${product.nombre}</h3>
+        <p>${product.categoria}</p>
+        <p>${product.descripcion}</p>
+        <p><strong>$${product.precio}</strong></p>
+      `;
+
+      card.onclick = () => mostrarProducto(product);
+      catalogoGrid.appendChild(card);
+    });
+
+    catalogoContainer.style.display = "block";
+    productSlider.parentElement.style.display = "none";
+
+    // Scroll automático hacia el el contenedor del catálogo
+    catalogoContainer.scrollIntoView({ behavior: "smooth", block: "start" });
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// -------------------- BOTÓN CATÁLOGO --------------------
+if (btnCatalogo) {
+  btnCatalogo.onclick = () => cargarCatalogo();
+}
+
+// -------------------- INIT --------------------
+document.addEventListener("DOMContentLoaded", () => {
+  if (heroContainer) cargarCategorias();
+  if (productSlider) cargarProductos();
+});
+
+
+// -------------------- FAQ --------------------
+document.querySelectorAll(".faq-question").forEach(btn => {
+  btn.addEventListener("click", () => {
+
+    const item = btn.parentElement;
+
+    // cerrar otros
+    document.querySelectorAll(".faq-item").forEach(i => {
+      if (i !== item) {
+        i.classList.remove("active");
+      }
+    });
+
+    // toggle actual
+    item.classList.toggle("active");
+  });
+});
+
+// -------------------- ESTILOS --------------------
+const style = document.createElement("style");
+style.textContent = `
+.producto-overlay {
+  position: fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(5px);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:9999;
+}
+.producto-detalle-profesional {
+  background:#fff;
+  border-radius:20px;
+  max-width:950px;
+  width:90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  display:flex;
+  flex-wrap:wrap;
+  gap:40px;
+  padding:40px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+  position: relative;
+  align-items: center;
+}
+.detalle-imagen {
+  flex: 1;
+  min-width: 250px;
+  display: flex;
+  justify-content: center;
+}
+.detalle-imagen img {
+  width:100%;
+  max-width: 350px;
+  border-radius:15px;
+  object-fit: cover;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+.detalle-info {
+  flex: 1.5;
+  min-width: 300px;
+  display: flex;
+  flex-direction: column;
+}
+.detalle-titulo {
+  font-size: 32px;
+  color: #003366;
+  margin: 0 0 15px 0;
+  line-height:1.2;
+}
+.detalle-categoria {
+  background: #eef7ff;
+  color: #00AEEF;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  display: inline-block;
+  align-self: flex-start;
+  margin-bottom: 20px;
+}
+.detalle-categoria span {
+  color: #555;
+  font-weight: normal;
+}
+.detalle-desc {
+  font-size: 17px;
+  color: #444;
+  line-height: 1.6;
+  margin-bottom: 25px;
+}
+.detalle-precio {
+  font-size: 36px;
+  font-weight: 900;
+  color: #28a745;
+  margin-bottom: 30px;
+}
+.detalle-acciones {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  width: 100%;
+}
+.producto-btn {
+  background:#00AEEF;
+  color:#fff;
+  border:none;
+  padding:15px 25px;
+  font-weight: bold;
+  font-size: 16px;
+  border-radius:10px;
+  cursor:pointer;
+  flex: 1;
+  text-align: center;
+  transition: all 0.3s;
+}
+.producto-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+.btn-amarillo { background: #ffc107; color: #000; }
+.btn-verde { background: #28a745; }
+.volver-btn {
+  margin-top:10px;
+  background:#555;
+  color:white;
+  border:none;
+  padding:12px 20px;
+  border-radius:10px;
+  cursor:pointer;
+  transition: 0.3s;
+}
+.btn-outline {
+  background: transparent;
+  color: #555;
+  border: 1px solid #ccc;
+  align-self: flex-start;
+  font-weight: bold;
+}
+.btn-outline:hover {
+  background: #eee;
+  color: #000;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+}
+.form-group label {
+  font-weight: bold;
+  color: #003366;
+  font-size: 14px;
+}
+.form-group input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+.form-group input:focus {
+  border-color: #00AEEF;
+}
+`;
+document.head.appendChild(style);
+
+/* -------------------- ADMIN LOGIC -------------------- */
+const btnAdmin = document.getElementById("btn-admin");
+const btnAgregar = document.getElementById("btn-agregar-producto");
+const btnEliminar = document.getElementById("btn-eliminar-producto");
+const btnTema = document.getElementById("btn-tema");
+
+// Aplicar tema guardado
+const temas = ["", "tema-gamer", "tema-minimalista"];
+let temaActual = localStorage.getItem("tech_tema") || "";
+if (temaActual) document.body.className = temaActual;
+
+function checkAdmin() {
+  if (sessionStorage.getItem("isAdmin") === "true") {
+    if(btnAdmin) btnAdmin.style.display = "none";
+    if(btnAgregar) btnAgregar.style.display = "inline-block";
+    if(btnEliminar) btnEliminar.style.display = "inline-block";
+    if(btnTema) btnTema.style.display = "inline-block";
+  }
+}
+checkAdmin();
+
+if (btnTema) {
+  btnTema.onclick = () => {
+    let index = temas.indexOf(document.body.className);
+    index = (index + 1) % temas.length;
+    let nuevoTema = temas[index];
+    
+    document.body.className = nuevoTema;
+    localStorage.setItem("tech_tema", nuevoTema);
+    
+    let nombreTema = nuevoTema === "" ? "Por defecto" : (nuevoTema === "tema-gamer" ? "Gamer Oscuro" : "Minimalista Elegante");
+    alert(`Tema cambiado a: ${nombreTema}`);
+  };
+}
+
+if (btnAdmin) {
+  btnAdmin.onclick = () => {
+    const formOverlay = document.createElement("div");
+    formOverlay.className = "producto-overlay";
+    formOverlay.innerHTML = `
+      <div class="producto-detalle-profesional" style="max-width: 350px; flex-direction: column; gap: 15px;">
+        <h2 style="color: #003366; text-align: center;">Acceso Admin</h2>
+        <div class="form-group"><label>Usuario</label><input type="text" id="admin-user" placeholder="holaprueba123"></div>
+        <div class="form-group"><label>Contraseña</label><input type="password" id="admin-pass" placeholder="1234"></div>
+        <div style="display:flex; justify-content:space-between; margin-top:10px;">
+          <button class="btn-cancel-admin volver-btn" style="margin-top:0;">Cerrar</button>
+          <button class="btn-login-admin producto-btn" style="margin-top:0; background:#003366;">Ingresar</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(formOverlay);
+
+    formOverlay.querySelector(".btn-login-admin").onclick = () => {
+      const u = document.getElementById("admin-user").value;
+      const p = document.getElementById("admin-pass").value;
+      if (u === "holaprueba123" && p === "1234") {
+        sessionStorage.setItem("isAdmin", "true");
+        checkAdmin();
+        alert("¡Bienvenido Administrador!");
+        formOverlay.remove();
+      } else {
+        alert("Credenciales incorrectas.");
+      }
+    };
+    formOverlay.querySelector(".btn-cancel-admin").onclick = () => formOverlay.remove();
+  };
+}
+
+if (btnAgregar) {
+  btnAgregar.onclick = () => {
+    const formOverlay = document.createElement("div");
+    formOverlay.className = "producto-overlay";
+    formOverlay.innerHTML = `
+      <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left;">
+        <h2 style="color: #28a745; text-align: center; margin-bottom: 5px; width: 100%;">➕ Agregar Producto</h2>
+        
+        <div class="form-group"><label>Nombre</label><input type="text" id="add-nombre"></div>
+        <div class="form-group"><label>Categoría</label><input type="text" id="add-categoria" placeholder="Ej. Laptops"></div>
+        <div class="form-group"><label>Precio</label><input type="number" id="add-precio"></div>
+        <div class="form-group"><label>Descripción</label><input type="text" id="add-descripcion"></div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 15px; width: 100%;">
+          <button class="btn-cancel-add volver-btn" style="margin-top: 0;">Cancelar</button>
+          <button class="btn-confirm-add producto-btn" style="margin-top: 0; margin-left: auto; background: #28a745;">Agregar</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(formOverlay);
+
+    formOverlay.querySelector(".btn-confirm-add").onclick = async () => {
+      const pNombre = document.getElementById("add-nombre").value.trim();
+      const pCat = document.getElementById("add-categoria").value.trim();
+      const pPrecio = document.getElementById("add-precio").value.trim();
+      const pDesc = document.getElementById("add-descripcion").value.trim();
+
+      if(!pNombre || !pCat || !pPrecio || !pDesc) return alert("Completa todos los campos.");
+      
+      const productos = await obtenerProductos();
+      productos.push({
+        nombre: pNombre,
+        categoria: pCat,
+        precio: parseFloat(pPrecio),
+        descripcion: pDesc
+      });
+      localStorage.setItem("tech_products", JSON.stringify(productos));
+      alert("Producto agregado correctamente.");
+      formOverlay.remove();
+      cargarProductos();
+      if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
+    };
+
+    formOverlay.querySelector(".btn-cancel-add").onclick = () => formOverlay.remove();
+  };
+}
+
+if (btnEliminar) {
+  btnEliminar.onclick = async () => {
+    const productos = await obtenerProductos();
+    
+    const formOverlay = document.createElement("div");
+    formOverlay.className = "producto-overlay";
+    
+    let htmlList = productos.map((p, i) => `
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding:8px 0;">
+        <span><strong>${p.nombre}</strong> <br> <small>$${p.precio}</small></span>
+        <button onclick="borrarProd(${i})" style="background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer; padding:5px 10px;">Borrar</button>
+      </div>
+    `).join("");
+
+    formOverlay.innerHTML = `
+      <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left; max-height: 80vh; overflow-y: auto;">
+        <h2 style="color: #dc3545; text-align: center; margin-bottom: 5px; width: 100%;">🗑️ Eliminar Producto</h2>
+        <div id="lista-borrar" style="display:flex; flex-direction:column; gap:5px;">${htmlList}</div>
+        <button class="btn-cancel-del volver-btn" style="margin-top:20px; width:100%;">Cerrar</button>
+      </div>
+    `;
+    document.body.appendChild(formOverlay);
+
+    window.borrarProd = (idx) => {
+      if(!confirm("¿Seguro que deseas borrar este producto?")) return;
+      productos.splice(idx, 1);
+      localStorage.setItem("tech_products", JSON.stringify(productos));
+      alert("Producto eliminado.");
+      formOverlay.remove();
+      cargarProductos();
+      if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
+      btnEliminar.click(); // reabrir para mostrar actualizado
+    };
+
+    formOverlay.querySelector(".btn-cancel-del").onclick = () => formOverlay.remove();
+  };
+}
