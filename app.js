@@ -341,15 +341,23 @@ async function obtenerProductos() {
 }
 
 async function obtenerDatosGenerales() {
-  const cached = localStorage.getItem("tech_datos");
-  if (cached) return JSON.parse(cached);
+  let cached = localStorage.getItem("tech_datos");
+  if (cached) {
+    let datos = JSON.parse(cached);
+    if (datos.ubicacion === "Managua, Nicaragua") {
+      localStorage.removeItem("tech_datos");
+      cached = null;
+    } else {
+      return datos;
+    }
+  }
   
   const datos = {
     nombre: "Tech Store Nicaragua",
-    ubicacion: "Managua, Nicaragua",
+    ubicacion: "Managua, Colonia 9 de Junio, Terminal de Ruta 119 2c al sur 1c abajo 1/2c al sur MI, Managua, Nicaragua",
     facebook: "https://facebook.com/",
     instagram: "https://instagram.com/",
-    whatsapp: "505XXXXXXXX"
+    whatsapp: "50576112321"
   };
   localStorage.setItem("tech_datos", JSON.stringify(datos));
   return datos;
@@ -388,7 +396,12 @@ const btnBuscar = document.getElementById("btn-buscar");
 
 // -------------------- WHATSAPP --------------------
 function enviarWhatsApp(mensaje) {
-  const numero = "50576112321";
+  const cached = localStorage.getItem("tech_datos");
+  let numero = "50576112321";
+  if (cached) {
+    const d = JSON.parse(cached);
+    if (d.whatsapp) numero = d.whatsapp;
+  }
   const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
   window.open(url, "_blank");
 }
@@ -893,6 +906,23 @@ style.textContent = `
 .form-group input:focus {
   border-color: #00AEEF;
 }
+.producto-detalle-profesional::-webkit-scrollbar,
+.custom-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+.producto-detalle-profesional::-webkit-scrollbar-track,
+.custom-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+.producto-detalle-profesional::-webkit-scrollbar-thumb,
+.custom-scroll-container::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+.producto-detalle-profesional::-webkit-scrollbar-thumb:hover,
+.custom-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
 `;
 document.head.appendChild(style);
 
@@ -942,8 +972,8 @@ if (btnAdmin) {
     formOverlay.innerHTML = `
       <div class="producto-detalle-profesional" style="max-width: 350px; flex-direction: column; gap: 15px;">
         <h2 style="color: #003366; text-align: center;">Acceso Admin</h2>
-        <div class="form-group"><label>Usuario</label><input type="text" id="admin-user" placeholder="holaprueba123"></div>
-        <div class="form-group"><label>Contraseña</label><input type="password" id="admin-pass" placeholder="1234"></div>
+        <div class="form-group"><label>Usuario</label><input type="text" id="admin-user"></div>
+        <div class="form-group"><label>Contraseña</label><input type="password" id="admin-pass"></div>
         <div style="display:flex; justify-content:space-between; margin-top:10px;">
           <button class="btn-cancel-admin volver-btn" style="margin-top:0;">Cerrar</button>
           <button class="btn-login-admin producto-btn" style="margin-top:0; background:#003366;">Ingresar</button>
@@ -955,7 +985,7 @@ if (btnAdmin) {
     formOverlay.querySelector(".btn-login-admin").onclick = () => {
       const u = document.getElementById("admin-user").value;
       const p = document.getElementById("admin-pass").value;
-      if (u === "holaprueba123" && p === "1234") {
+      if (u === "YeltsinTechStore" && p === "A1B2C3D4") {
         sessionStorage.setItem("isAdmin", "true");
         checkAdmin();
         alert("¡Bienvenido Administrador!");
@@ -1023,17 +1053,17 @@ if (btnEliminar) {
     formOverlay.className = "producto-overlay";
     
     let htmlList = productos.map((p, i) => `
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding:8px 0;">
-        <span><strong>${p.nombre}</strong> <br> <small>$${p.precio}</small></span>
-        <button onclick="borrarProd(${i})" style="background:#dc3545; color:white; border:none; border-radius:4px; cursor:pointer; padding:5px 10px;">Borrar</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eaeaea; padding:12px 15px; background: #fdfdfd; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <span style="color:#333;"><strong>${p.nombre}</strong> <br> <small style="color:#00AEEF; font-weight:bold;">$${p.precio}</small></span>
+        <button onclick="borrarProd(${i})" style="background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; padding:8px 12px; transition:0.3s; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1"><span class="material-symbols-outlined" style="font-size:18px;">delete</span></button>
       </div>
     `).join("");
 
     formOverlay.innerHTML = `
-      <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left; max-height: 80vh; overflow-y: auto;">
-        <h2 style="color: #dc3545; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">delete</span> Eliminar Producto</h2>
-        <div id="lista-borrar" style="display:flex; flex-direction:column; gap:5px;">${htmlList}</div>
-        <button class="btn-cancel-del volver-btn" style="margin-top:20px; width:100%;">Cerrar</button>
+      <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
+        <h2 style="color: #dc3545; text-align: center; margin-bottom: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">delete</span> Eliminar Producto</h2>
+        <div class="custom-scroll-container" id="lista-borrar" style="display:flex; flex-direction:column; gap:8px; max-height: 50vh; overflow-y: auto; padding-right: 10px; border: 1px solid #eee; border-radius: 8px; padding: 10px;">${htmlList}</div>
+        <button class="btn-cancel-del volver-btn" style="margin-top:10px; width:100%;">Cerrar</button>
       </div>
     `;
     document.body.appendChild(formOverlay);
@@ -1061,7 +1091,7 @@ if (btnEditarData) {
     const formOverlay = document.createElement("div");
     formOverlay.className = "producto-overlay";
     formOverlay.innerHTML = `
-      <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left; max-height: 90vh; overflow-y: auto;">
+      <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
         <h2 style="color: #17a2b8; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">settings</span> Editar Datos Generales</h2>
         
         <div class="form-group"><label>Nombre del Negocio</label><input type="text" id="edit-nombre" value="${datos.nombre}"></div>
@@ -1113,17 +1143,17 @@ if (btnEditarProd) {
     formOverlay.className = "producto-overlay";
     
     let htmlList = productos.map((p, i) => `
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #ddd; padding:8px 0;">
-        <span><strong>${p.nombre}</strong> <br> <small>$${p.precio}</small></span>
-        <button onclick="editarProd(${i})" style="background:#ffc107; color:black; border:none; border-radius:4px; cursor:pointer; padding:5px 10px;">Editar</button>
+      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eaeaea; padding:12px 15px; background: #fdfdfd; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+        <span style="color:#333;"><strong>${p.nombre}</strong> <br> <small style="color:#00AEEF; font-weight:bold;">$${p.precio}</small></span>
+        <button onclick="editarProd(${i})" style="background:#ffc107; color:black; border:none; border-radius:6px; cursor:pointer; padding:8px 12px; transition:0.3s; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1"><span class="material-symbols-outlined" style="font-size:18px;">edit</span></button>
       </div>
     `).join("");
 
     formOverlay.innerHTML = `
-      <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left; max-height: 80vh; overflow-y: auto;">
-        <h2 style="color: #ffc107; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">edit</span> Editar Producto</h2>
-        <div id="lista-editar" style="display:flex; flex-direction:column; gap:5px;">${htmlList}</div>
-        <button class="btn-cancel-edit volver-btn" style="margin-top:20px; width:100%;">Cerrar</button>
+      <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
+        <h2 style="color: #ffc107; text-align: center; margin-bottom: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">edit</span> Editar Producto</h2>
+        <div class="custom-scroll-container" id="lista-editar" style="display:flex; flex-direction:column; gap:8px; max-height: 50vh; overflow-y: auto; padding-right: 10px; border: 1px solid #eee; border-radius: 8px; padding: 10px;">${htmlList}</div>
+        <button class="btn-cancel-edit volver-btn" style="margin-top:10px; width:100%;">Cerrar</button>
       </div>
     `;
     document.body.appendChild(formOverlay);
