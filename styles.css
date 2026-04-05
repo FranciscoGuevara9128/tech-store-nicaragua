@@ -169,6 +169,191 @@ header {
   display: block;
 }
 
+/* -------------------- FILTRO DE PRECIOS -------------------- */
+.catalogo-filtros {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: #fff;
+  border: 1px solid #e0e8f0;
+  border-radius: 12px;
+  padding: 14px 20px;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.filtro-grupo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.filtro-grupo label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #555;
+  white-space: nowrap;
+}
+
+.filtro-grupo input[type="number"] {
+  width: 90px;
+  padding: 7px 10px;
+  border: 1px solid #ccc;
+  border-radius: 7px;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.filtro-grupo input[type="number"]:focus {
+  border-color: #00AEEF;
+}
+
+.catalogo-filtros .material-symbols-outlined {
+  font-size: 20px;
+  color: #00AEEF;
+}
+
+#btn-aplicar-precio {
+  background: #00AEEF;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  transition: background 0.2s;
+}
+
+#btn-aplicar-precio:hover { background: #0088cc; }
+
+#btn-limpiar-precio {
+  background: transparent;
+  color: #888;
+  border: 1px solid #ccc;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.2s;
+}
+
+#btn-limpiar-precio:hover { background: #f0f0f0; color: #333; }
+
+/* -------------------- SELECTOR DE CATEGORÍAS (ADMIN) -------------------- */
+.cat-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 6px;
+}
+
+.cat-btn {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  border-radius: 20px;
+  background: #f5f5f5;
+  color: #444;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.cat-btn:hover {
+  border-color: #00AEEF;
+  color: #00AEEF;
+  background: #eef7ff;
+}
+
+.cat-btn-active {
+  background: #003366 !important;
+  color: white !important;
+  border-color: #003366 !important;
+  font-weight: bold;
+}
+
+/* -------------------- BOTÓN ESCRIBIR AHORA (CATÁLOGO) -------------------- */
+.btn-escribir-ahora {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 14px;
+  background: #25D366;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.btn-escribir-ahora:hover {
+  background: #1dad52;
+  transform: translateY(-2px);
+}
+
+/* -------------------- UBICACIÓN / MAPA -------------------- */
+.ubicacion-section {
+  padding: 3rem 2rem;
+  background: #f4f6f8;
+  text-align: center;
+}
+
+.ubicacion-section h2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 28px;
+  color: #003366;
+  margin-bottom: 0.5rem;
+}
+
+.ubicacion-desc {
+  color: #666;
+  font-size: 15px;
+  margin-bottom: 1.5rem;
+}
+
+.mapa-wrapper {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  max-width: 900px;
+  margin: 0 auto 1.5rem;
+}
+
+.btn-maps {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #003366;
+  color: white;
+  text-decoration: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: bold;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.btn-maps:hover {
+  background: #00AEEF;
+  transform: translateY(-2px);
+}
+
 /* -------------------- CONTACTO -------------------- */
 .contacto {
   background: #003366;
@@ -606,4 +791,41 @@ body.tema-minimalista .producto-detalle-profesional h2, body.tema-minimalista .p
 body.tema-minimalista .hero-cards {
   justify-content: center;
   gap: 30px;
+}
+
+/* -------------------- RESPONSIVE MÓVIL -------------------- */
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 14px 16px;
+    gap: 10px;
+  }
+
+  .logo-container h1 {
+    font-size: 16px;
+  }
+
+  .logo {
+    width: 42px;
+  }
+
+  .header-buttons {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-left: 0;
+  }
+
+  .header-buttons button {
+    padding: 10px 14px;
+    font-size: 14px;
+    border-radius: 7px;
+  }
+
+  #search-input.activo {
+    width: 100%;
+    font-size: 15px;
+    padding: 10px;
+  }
 }

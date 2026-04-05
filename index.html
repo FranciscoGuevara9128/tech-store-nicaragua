@@ -47,6 +47,8 @@
     <div class="header-buttons">
       <button id="btn-admin" style="background:transparent; font-size: 20px; padding: 0 10px; color: inherit;"
         title="Acceso Administrador"><span class="material-symbols-outlined">person</span></button>
+      <button id="btn-cerrar-sesion" style="display:none; background:#6c757d; color:white;" title="Cerrar Sesión Admin"><span
+          class="material-symbols-outlined">logout</span> Salir</button>
       <button id="btn-agregar-producto" style="display:none; background:#28a745; color:white;"><span
           class="material-symbols-outlined">add</span> Agregar Producto</button>
       <button id="btn-editar-producto" style="display:none; background:#ffc107; color:black;"><span
@@ -84,6 +86,20 @@
   <!-- CATÁLOGO COMPLETO -->
   <section class="catalogo-container" id="catalogo-container" style="display:none;">
     <h2>Catálogo Completo</h2>
+    <div class="catalogo-filtros">
+      <div class="filtro-grupo">
+        <span class="material-symbols-outlined">attach_money</span>
+        <label>Precio mín ($)</label>
+        <input type="number" id="filtro-precio-min" placeholder="0" min="0">
+      </div>
+      <div class="filtro-grupo">
+        <span class="material-symbols-outlined">attach_money</span>
+        <label>Precio máx ($)</label>
+        <input type="number" id="filtro-precio-max" placeholder="Sin límite" min="0">
+      </div>
+      <button id="btn-aplicar-precio"><span class="material-symbols-outlined">filter_list</span> Filtrar</button>
+      <button id="btn-limpiar-precio"><span class="material-symbols-outlined">close</span> Limpiar</button>
+    </div>
     <div class="grid" id="catalogo-grid"></div>
   </section>
 
@@ -144,6 +160,27 @@
         <div class="feature"><span class="material-symbols-outlined">star</span> <span>Productos de calidad</span></div>
       </div>
     </div>
+  </section>
+
+  <!-- UBICACIÓN / MAPA -->
+  <section class="ubicacion-section">
+    <h2><span class="material-symbols-outlined">location_on</span> Encuéntranos</h2>
+    <p class="ubicacion-desc">Managua, Colonia 9 de Junio — Terminal de Ruta 119, 2c al sur, 1c abajo, 1/2c al sur MI</p>
+    <div class="mapa-wrapper">
+      <iframe
+        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d976.7!2d-86.2091626!3d12.1343722!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x8f73ff0b86bd7e73%3A0xf9e08db6a078ccde!2sTech%20Store%20Nicaragua!5e0!3m2!1ses!2sni!4v1"
+        width="100%"
+        height="380"
+        style="border:0;"
+        allowfullscreen=""
+        loading="lazy"
+        referrerpolicy="no-referrer-when-downgrade"
+        title="Ubicación Tech Store Nicaragua">
+      </iframe>
+    </div>
+    <a class="btn-maps" href="https://maps.app.goo.gl/ZqGtsnB8HzNVxgBL7" target="_blank">
+      <span class="material-symbols-outlined">open_in_new</span> Abrir en Google Maps
+    </a>
   </section>
 
   <!-- FOOTER -->

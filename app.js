@@ -390,16 +390,21 @@ async function obtenerProductos() {
     let bdImgMap = {};
     PRODUCTOS_BD.forEach(p => bdImgMap[p.nombre] = p.imagen);
     parsed = parsed.map(p => {
-      // Reemplazar si el producto en DB tiene una imagen real
+      // Usar imagen de BD si el producto no tiene una propia
       if (bdImgMap[p.nombre] && (!p.imagen || p.imagen === 'img/generico.png')) {
         p.imagen = bdImgMap[p.nombre];
+      }
+      // Migrar URLs antiguas de Drive (uc?export=view → thumbnail)
+      if (p.imagen && p.imagen.includes('drive.google.com/uc')) {
+        const idMatch = p.imagen.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (idMatch) p.imagen = `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w600`;
       }
       return p;
     });
     localStorage.setItem("tech_products", JSON.stringify(parsed));
     return parsed;
   }
-  
+
   const products = PRODUCTOS_BD;
   localStorage.setItem("tech_products", JSON.stringify(products));
   return products;
@@ -469,6 +474,33 @@ function enviarWhatsApp(mensaje) {
   }
   const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
   window.open(url, "_blank");
+}
+
+function escribirAhora(nombreProducto) {
+  const mensaje = `\u00a1Hola! Estoy interesado en el producto: *${nombreProducto}*. \u00bfPodr\u00edas darme m\u00e1s informaci\u00f3n?`;
+  enviarWhatsApp(mensaje);
+}
+
+// Función global para el botón de contacto general
+function contactar() {
+  const mensaje = "\u00a1Hola! Me gustar\u00eda obtener m\u00e1s informaci\u00f3n sobre sus productos.";
+  enviarWhatsApp(mensaje);
+}
+
+// -------------------- HELPER IMAGEN --------------------
+function procesarUrlImagen(url) {
+  if (!url || url.trim() === '') return 'img/generico.png';
+  url = url.trim();
+  // Detectar links de Google Drive y convertir al formato de miniatura (thumbnail)
+  const driveFileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
+  const driveOpenMatch = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
+  const driveUcMatch = url.match(/drive\.google\.com\/uc\?.*[?&]id=([a-zA-Z0-9_-]+)/);
+  const driveUcSimple = url.match(/drive\.google\.com\/uc\?export=view&id=([a-zA-Z0-9_-]+)/);
+  if (driveFileMatch) return `https://drive.google.com/thumbnail?id=${driveFileMatch[1]}&sz=w600`;
+  if (driveOpenMatch) return `https://drive.google.com/thumbnail?id=${driveOpenMatch[1]}&sz=w600`;
+  if (driveUcMatch) return `https://drive.google.com/thumbnail?id=${driveUcMatch[1]}&sz=w600`;
+  if (driveUcSimple) return `https://drive.google.com/thumbnail?id=${driveUcSimple[1]}&sz=w600`;
+  return url;
 }
 
 function agendarPedido(product) {
@@ -659,6 +691,23 @@ function cerrarDetalle() {
   document.body.style.overflow = "auto";
 }
 
+// -------------------- IMÁGENES POR CATEGORÍA --------------------
+const IMAGENES_CATEGORIAS = {
+  "Auriculares Gamer": "img/prod_p30.jpg",
+  "Multimedia": "img/prod_auriculares-a9-pro.jpg",
+  "Auriculares Ejecutivos": "img/prod_yyk-520.jpg",
+  "Auriculares para la Escucha": "img/prod_intrauditivo-individual-z-360bt.jpg",
+  "Bancos de Carga": "img/prod_powerbank-de-50-mil-map-con-panel-y-carga-corriente.jpg",
+  "Teclados": "img/prod_mini-teclado-bluetooth-recargable.jpg",
+  "Motorizados": "img/prod_holder-ara-a-anti-vibraci-n-de-manubrio.jpg",
+  "Intercomunicadores Ejeas": "img/prod_ejeas-v6-pro.jpg",
+  "Smartwatch": "img/prod_smartwatch-i90-suit-extreme.jpg",
+  "Cargadores Xiaomi Turbo Charger": "img/prod_cargador-de-33w.jpg",
+  "Auriculares de Monitoreo": "img/prod_inear-odin.jpg",
+  "Micrófono de Solapa": "img/prod_micr-fono-k15-entrada-tipo-c-plus-iphone.jpg",
+  "Enfriadores Móviles": "img/prod_enfriador-cx07.jpg"
+};
+
 // -------------------- CATEGORÍAS --------------------
 async function cargarCategorias() {
   try {
@@ -670,8 +719,10 @@ async function cargarCategorias() {
       const card = document.createElement("div");
       card.className = "hero-card";
 
+      const imgSrc = IMAGENES_CATEGORIAS[categoria] || "img/generico.png";
+
       card.innerHTML = `
-        <img src="img/generico.png" style="aspect-ratio: 1/1; object-fit: cover; width: 100%; border-radius: 10px 10px 0 0;">
+        <img src="${imgSrc}" style="aspect-ratio: 1/1; object-fit: cover; width: 100%; border-radius: 10px 10px 0 0;">
         <h3>${categoria}</h3>
       `;
 
@@ -761,6 +812,15 @@ async function cargarCatalogo(categoria = null, buscar = "") {
       );
     }
 
+    // Filtro de precio
+    const precioMinInput = document.getElementById('filtro-precio-min');
+    const precioMaxInput = document.getElementById('filtro-precio-max');
+    const precioMin = precioMinInput && precioMinInput.value !== '' ? parseFloat(precioMinInput.value) : 0;
+    const precioMax = precioMaxInput && precioMaxInput.value !== '' ? parseFloat(precioMaxInput.value) : Infinity;
+    if (precioMin > 0 || precioMax < Infinity) {
+      filtrados = filtrados.filter(p => p.precio >= precioMin && p.precio <= precioMax);
+    }
+
     filtrados.forEach(product => {
       const card = document.createElement("div");
       card.className = "card";
@@ -780,7 +840,7 @@ async function cargarCatalogo(categoria = null, buscar = "") {
     catalogoContainer.style.display = "block";
     productSlider.parentElement.style.display = "none";
 
-    // Scroll automático hacia el el contenedor del catálogo
+    // Scroll automático hacia el contenedor del catálogo
     catalogoContainer.scrollIntoView({ behavior: "smooth", block: "start" });
 
   } catch (err) {
@@ -791,6 +851,22 @@ async function cargarCatalogo(categoria = null, buscar = "") {
 // -------------------- BOTÓN CATÁLOGO --------------------
 if (btnCatalogo) {
   btnCatalogo.onclick = () => cargarCatalogo();
+}
+
+// -------------------- FILTRO DE PRECIO --------------------
+const btnAplicarPrecio = document.getElementById("btn-aplicar-precio");
+const btnLimpiarPrecio = document.getElementById("btn-limpiar-precio");
+if (btnAplicarPrecio) {
+  btnAplicarPrecio.onclick = () => cargarCatalogo();
+}
+if (btnLimpiarPrecio) {
+  btnLimpiarPrecio.onclick = () => {
+    const minInput = document.getElementById('filtro-precio-min');
+    const maxInput = document.getElementById('filtro-precio-max');
+    if (minInput) minInput.value = '';
+    if (maxInput) maxInput.value = '';
+    cargarCatalogo();
+  };
 }
 
 // -------------------- INIT --------------------
@@ -993,6 +1069,7 @@ document.head.appendChild(style);
 
 /* -------------------- ADMIN LOGIC -------------------- */
 const btnAdmin = document.getElementById("btn-admin");
+const btnCerrarSesion = document.getElementById("btn-cerrar-sesion");
 const btnAgregar = document.getElementById("btn-agregar-producto");
 const btnEliminar = document.getElementById("btn-eliminar-producto");
 const btnTema = document.getElementById("btn-tema");
@@ -1005,16 +1082,36 @@ let temaActual = localStorage.getItem("tech_tema") || "";
 if (temaActual) document.body.className = temaActual;
 
 function checkAdmin() {
-  if (sessionStorage.getItem("isAdmin") === "true") {
+  const esAdmin = sessionStorage.getItem("isAdmin") === "true";
+  if (esAdmin) {
     if(btnAdmin) btnAdmin.style.display = "none";
+    if(btnCerrarSesion) btnCerrarSesion.style.display = "inline-block";
     if(btnAgregar) btnAgregar.style.display = "inline-block";
     if(btnEliminar) btnEliminar.style.display = "inline-block";
     if(btnTema) btnTema.style.display = "inline-block";
     if(btnEditarData) btnEditarData.style.display = "inline-block";
     if(btnEditarProd) btnEditarProd.style.display = "inline-block";
+  } else {
+    if(btnAdmin) btnAdmin.style.display = "";
+    if(btnCerrarSesion) btnCerrarSesion.style.display = "none";
+    if(btnAgregar) btnAgregar.style.display = "none";
+    if(btnEliminar) btnEliminar.style.display = "none";
+    if(btnTema) btnTema.style.display = "none";
+    if(btnEditarData) btnEditarData.style.display = "none";
+    if(btnEditarProd) btnEditarProd.style.display = "none";
   }
 }
 checkAdmin();
+
+if (btnCerrarSesion) {
+  btnCerrarSesion.onclick = () => {
+    if (confirm("\u00bfDeseas cerrar la sesi\u00f3n de administrador?")) {
+      sessionStorage.removeItem("isAdmin");
+      checkAdmin();
+      alert("Sesi\u00f3n de administrador cerrada.");
+    }
+  };
+}
 
 if (btnTema) {
   btnTema.onclick = () => {
@@ -1065,19 +1162,34 @@ if (btnAdmin) {
 
 if (btnAgregar) {
   btnAgregar.onclick = () => {
+    const catBtnsHtml = CATEGORIAS_BD.map(cat =>
+      `<button type="button" class="cat-btn" data-cat="${cat}">${cat}</button>`
+    ).join('');
+
     const formOverlay = document.createElement("div");
     formOverlay.className = "producto-overlay";
     formOverlay.innerHTML = `
-      <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left;">
+      <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left;">
         <h2 style="color: #28a745; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">add_circle</span> Agregar Producto</h2>
-        
-        <div class="form-group"><label>Nombre</label><input type="text" id="add-nombre"></div>
-        <div class="form-group"><label>Categoría</label><input type="text" id="add-categoria" placeholder="Ej. Laptops"></div>
-        <div class="form-group"><label>Precio</label><input type="number" id="add-precio"></div>
-        <div class="form-group"><label>Descripción</label><input type="text" id="add-descripcion"></div>
-        <div class="form-group"><label>URL o Ruta de Imagen (Opcional)</label><input type="text" id="add-imagen" placeholder="Ej. img/generico.png o https://..."></div>
 
-        <div style="display: flex; justify-content: space-between; margin-top: 15px; width: 100%;">
+        <div class="form-group"><label>Nombre</label><input type="text" id="add-nombre"></div>
+
+        <div class="form-group">
+          <label>Categoría &nbsp;<span id="add-cat-label" style="color:#00AEEF; font-size:13px;"></span></label>
+          <input type="hidden" id="add-categoria">
+          <div class="cat-picker">${catBtnsHtml}</div>
+        </div>
+
+        <div class="form-group"><label>Precio ($)</label><input type="number" id="add-precio" min="0"></div>
+        <div class="form-group"><label>Descripción</label><input type="text" id="add-descripcion"></div>
+
+        <div class="form-group">
+          <label>Imagen — URL o link de Google Drive</label>
+          <input type="text" id="add-imagen" placeholder="https://... o link de compartir de Drive">
+          <small style="color:#888; margin-top:4px; display:block;">Los links de Google Drive se convierten automáticamente.</small>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; margin-top: 10px; width: 100%;">
           <button class="btn-cancel-add volver-btn" style="margin-top: 0;">Cancelar</button>
           <button class="btn-confirm-add producto-btn" style="margin-top: 0; margin-left: auto; background: #28a745;">Agregar</button>
         </div>
@@ -1085,15 +1197,25 @@ if (btnAgregar) {
     `;
     document.body.appendChild(formOverlay);
 
+    // Selector de categorías
+    formOverlay.querySelectorAll('.cat-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        formOverlay.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('cat-btn-active'));
+        btn.classList.add('cat-btn-active');
+        document.getElementById('add-categoria').value = btn.dataset.cat;
+        document.getElementById('add-cat-label').textContent = '✓ ' + btn.dataset.cat;
+      });
+    });
+
     formOverlay.querySelector(".btn-confirm-add").onclick = async () => {
       const pNombre = document.getElementById("add-nombre").value.trim();
       const pCat = document.getElementById("add-categoria").value.trim();
       const pPrecio = document.getElementById("add-precio").value.trim();
       const pDesc = document.getElementById("add-descripcion").value.trim();
-      const pImagen = document.getElementById("add-imagen").value.trim() || 'img/generico.png';
+      const pImagen = procesarUrlImagen(document.getElementById("add-imagen").value.trim());
 
-      if(!pNombre || !pCat || !pPrecio || !pDesc) return alert("Completa todos los campos.");
-      
+      if (!pNombre || !pCat || !pPrecio || !pDesc) return alert("Completa todos los campos obligatorios.");
+
       const productos = await obtenerProductos();
       productos.push({
         nombre: pNombre,
@@ -1228,50 +1350,77 @@ if (btnEditarProd) {
 
     window.editarProd = (idx) => {
       const p = productos[idx];
+      const imgActual = (p.imagen && p.imagen !== 'img/generico.png') ? p.imagen : '';
+
+      const catBtnsHtmlEdi = CATEGORIAS_BD.map(cat =>
+        `<button type="button" class="cat-btn${cat === p.categoria ? ' cat-btn-active' : ''}" data-cat="${cat}">${cat}</button>`
+      ).join('');
+
       const formEdit = document.createElement("div");
       formEdit.className = "producto-overlay";
       formEdit.innerHTML = `
-        <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left;">
+        <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left;">
           <h2 style="color: #ffc107; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">edit</span> Editando: ${p.nombre}</h2>
-          
-          <div class="form-group"><label>Nombre</label><input type="text" id="edi-nombre" value="${p.nombre}"></div>
-          <div class="form-group"><label>Categoría</label><input type="text" id="edi-categoria" value="${p.categoria}"></div>
-          <div class="form-group"><label>Precio</label><input type="number" id="edi-precio" value="${p.precio}"></div>
-          <div class="form-group"><label>Descripción</label><input type="text" id="edi-descripcion" value="${p.descripcion}"></div>
-          <div class="form-group"><label>URL o Ruta de Imagen</label><input type="text" id="edi-imagen" value="${p.imagen || ''}"></div>
 
-          <div style="display: flex; justify-content: space-between; margin-top: 15px; width: 100%;">
+          <div class="form-group"><label>Nombre</label><input type="text" id="edi-nombre" value="${p.nombre}"></div>
+
+          <div class="form-group">
+            <label>Categoría &nbsp;<span id="edi-cat-label" style="color:#00AEEF; font-size:13px;">${p.categoria ? '✓ ' + p.categoria : ''}</span></label>
+            <input type="hidden" id="edi-categoria" value="${p.categoria}">
+            <div class="cat-picker">${catBtnsHtmlEdi}</div>
+          </div>
+
+          <div class="form-group"><label>Precio ($)</label><input type="number" id="edi-precio" value="${p.precio}" min="0"></div>
+          <div class="form-group"><label>Descripción</label><input type="text" id="edi-descripcion" value="${p.descripcion.replace(/"/g, '&quot;')}"></div>
+
+          <div class="form-group">
+            <label>Imagen — URL o link de Google Drive</label>
+            <input type="text" id="edi-imagen" value="${imgActual}" placeholder="https://... o link de compartir de Drive">
+            <small style="color:#888; margin-top:4px; display:block;">Los links de Google Drive se convierten automáticamente.</small>
+          </div>
+
+          <div style="display: flex; justify-content: space-between; margin-top: 10px; width: 100%;">
             <button class="btn-cancel-edi volver-btn" style="margin-top: 0;">Cancelar</button>
             <button class="btn-confirm-edi producto-btn" style="margin-top: 0; margin-left: auto; background: #ffc107; color: black;">Guardar Cambios</button>
           </div>
         </div>
       `;
       document.body.appendChild(formEdit);
-      
+
+      // Selector de categorías
+      formEdit.querySelectorAll('.cat-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          formEdit.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('cat-btn-active'));
+          btn.classList.add('cat-btn-active');
+          document.getElementById('edi-categoria').value = btn.dataset.cat;
+          document.getElementById('edi-cat-label').textContent = '✓ ' + btn.dataset.cat;
+        });
+      });
+
       formEdit.querySelector(".btn-confirm-edi").onclick = () => {
         const ediNombre = document.getElementById("edi-nombre").value.trim();
         const ediCat = document.getElementById("edi-categoria").value.trim();
         const ediPrecio = document.getElementById("edi-precio").value.trim();
         const ediDesc = document.getElementById("edi-descripcion").value.trim();
-        const ediImagen = document.getElementById("edi-imagen").value.trim();
+        const ediImagen = procesarUrlImagen(document.getElementById("edi-imagen").value.trim());
 
-        if(!ediNombre || !ediCat || !ediPrecio || !ediDesc) return alert("Completa todos los campos.");
-        
+        if (!ediNombre || !ediCat || !ediPrecio || !ediDesc) return alert("Completa todos los campos.");
+
         productos[idx] = {
           nombre: ediNombre,
           categoria: ediCat,
           precio: parseFloat(ediPrecio),
           descripcion: ediDesc,
-          imagen: ediImagen || 'img/generico.png'
+          imagen: ediImagen || p.imagen || 'img/generico.png'
         };
         localStorage.setItem("tech_products", JSON.stringify(productos));
         alert("Producto modificado correctamente.");
         formEdit.remove();
         formOverlay.remove();
-        
+
         cargarProductos();
         if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
-        btnEditarProd.click(); // reabrir para mostrar actualizado
+        btnEditarProd.click();
       };
 
       formEdit.querySelector(".btn-cancel-edi").onclick = () => formEdit.remove();
