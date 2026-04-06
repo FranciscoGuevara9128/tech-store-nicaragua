@@ -21,8 +21,27 @@ header {
 }
 
 .logo {
-  width: 50px;
-  margin-right: 10px;
+  width: 75px;
+  height: 75px;
+  object-fit: cover;
+  margin-right: 15px;
+  background-color: white;
+  border-radius: 50%;
+  padding: 5px;
+  box-shadow: 0 0 15px rgba(0, 174, 239, 0.5);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.logo:hover {
+  transform: scale(1.08);
+  box-shadow: 0 0 25px rgba(0, 174, 239, 0.8);
+}
+
+.logo-container h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: bold;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
 }
 
 /* 🔥 BOTONES + BUSCADOR */
