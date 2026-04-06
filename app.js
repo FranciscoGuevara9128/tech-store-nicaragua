@@ -411,46 +411,55 @@ async function obtenerProductos() {
 }
 
 async function obtenerDatosGenerales() {
+  // Defaults actualizados — si el caché tiene URLs antiguas de Facebook las corregimos
+  const DEFAULTS = {
+    nombre: "Tech Store Nicaragua",
+    ubicacion: "Managua, Colonia 9 de Junio, Terminal de Ruta 119 2c al sur 1c abajo 1/2c al sur MI, Managua, Nicaragua",
+    facebook: "https://www.facebook.com/p/Tech-Store-Nicaragua-61556545501927/",
+    instagram: "https://www.instagram.com/techstorenic/",
+    whatsapp: "50581503116"
+  };
+
   let cached = localStorage.getItem("tech_datos");
   if (cached) {
     let datos = JSON.parse(cached);
-    if (datos.ubicacion === "Managua, Nicaragua") {
-      localStorage.removeItem("tech_datos");
-      cached = null;
-    } else {
-      return datos;
+    // Forzar actualización si la URL de Facebook o WhatsApp difiere de los defaults
+    const needsUpdate =
+      datos.ubicacion === "Managua, Nicaragua" ||
+      datos.facebook !== DEFAULTS.facebook ||
+      datos.whatsapp !== DEFAULTS.whatsapp;
+    if (needsUpdate) {
+      datos = Object.assign({}, DEFAULTS, {
+        nombre: datos.nombre || DEFAULTS.nombre,
+        ubicacion: (datos.ubicacion && datos.ubicacion !== "Managua, Nicaragua") ? datos.ubicacion : DEFAULTS.ubicacion
+      });
+      localStorage.setItem("tech_datos", JSON.stringify(datos));
     }
+    return datos;
   }
-  
-  const datos = {
-    nombre: "Tech Store Nicaragua",
-    ubicacion: "Managua, Colonia 9 de Junio, Terminal de Ruta 119 2c al sur 1c abajo 1/2c al sur MI, Managua, Nicaragua",
-    facebook: "https://facebook.com/",
-    instagram: "https://instagram.com/",
-    whatsapp: "50576112321"
-  };
-  localStorage.setItem("tech_datos", JSON.stringify(datos));
-  return datos;
+
+  localStorage.setItem("tech_datos", JSON.stringify(DEFAULTS));
+  return DEFAULTS;
 }
 
 async function aplicarDatosGenerales() {
   const datos = await obtenerDatosGenerales();
-  
+
   const headerTitle = document.querySelector(".logo-container h1");
   if (headerTitle) headerTitle.textContent = datos.nombre;
-  
+
   const footerCopyright = document.getElementById("footer-nombre-copyright");
   if (footerCopyright) footerCopyright.textContent = "© " + new Date().getFullYear() + " " + datos.nombre;
-  
+
   const footerUbicacion = document.getElementById("footer-ubicacion");
   if (footerUbicacion) footerUbicacion.textContent = "Ubicación: " + datos.ubicacion;
-  
+
   const linkFb = document.getElementById("link-facebook");
   if (linkFb) linkFb.href = datos.facebook;
-  
+
   const linkIg = document.getElementById("link-instagram");
   if (linkIg) linkIg.href = datos.instagram;
-  
+
   const linkWa = document.getElementById("link-whatsapp");
   if (linkWa) linkWa.href = "https://wa.me/" + datos.whatsapp;
 }
@@ -1072,33 +1081,25 @@ const btnAdmin = document.getElementById("btn-admin");
 const btnCerrarSesion = document.getElementById("btn-cerrar-sesion");
 const btnAgregar = document.getElementById("btn-agregar-producto");
 const btnEliminar = document.getElementById("btn-eliminar-producto");
-const btnTema = document.getElementById("btn-tema");
 const btnEditarData = document.getElementById("btn-editar-datos");
 const btnEditarProd = document.getElementById("btn-editar-producto");
-
-// Aplicar tema guardado
-const temas = ["", "tema-gamer", "tema-minimalista"];
-let temaActual = localStorage.getItem("tech_tema") || "";
-if (temaActual) document.body.className = temaActual;
 
 function checkAdmin() {
   const esAdmin = sessionStorage.getItem("isAdmin") === "true";
   if (esAdmin) {
-    if(btnAdmin) btnAdmin.style.display = "none";
-    if(btnCerrarSesion) btnCerrarSesion.style.display = "inline-block";
-    if(btnAgregar) btnAgregar.style.display = "inline-block";
-    if(btnEliminar) btnEliminar.style.display = "inline-block";
-    if(btnTema) btnTema.style.display = "inline-block";
-    if(btnEditarData) btnEditarData.style.display = "inline-block";
-    if(btnEditarProd) btnEditarProd.style.display = "inline-block";
+    if (btnAdmin) btnAdmin.style.display = "none";
+    if (btnCerrarSesion) btnCerrarSesion.style.display = "inline-block";
+    if (btnAgregar) btnAgregar.style.display = "inline-block";
+    if (btnEliminar) btnEliminar.style.display = "inline-block";
+    if (btnEditarData) btnEditarData.style.display = "inline-block";
+    if (btnEditarProd) btnEditarProd.style.display = "inline-block";
   } else {
-    if(btnAdmin) btnAdmin.style.display = "";
-    if(btnCerrarSesion) btnCerrarSesion.style.display = "none";
-    if(btnAgregar) btnAgregar.style.display = "none";
-    if(btnEliminar) btnEliminar.style.display = "none";
-    if(btnTema) btnTema.style.display = "none";
-    if(btnEditarData) btnEditarData.style.display = "none";
-    if(btnEditarProd) btnEditarProd.style.display = "none";
+    if (btnAdmin) btnAdmin.style.display = "";
+    if (btnCerrarSesion) btnCerrarSesion.style.display = "none";
+    if (btnAgregar) btnAgregar.style.display = "none";
+    if (btnEliminar) btnEliminar.style.display = "none";
+    if (btnEditarData) btnEditarData.style.display = "none";
+    if (btnEditarProd) btnEditarProd.style.display = "none";
   }
 }
 checkAdmin();
@@ -1113,19 +1114,6 @@ if (btnCerrarSesion) {
   };
 }
 
-if (btnTema) {
-  btnTema.onclick = () => {
-    let index = temas.indexOf(document.body.className);
-    index = (index + 1) % temas.length;
-    let nuevoTema = temas[index];
-    
-    document.body.className = nuevoTema;
-    localStorage.setItem("tech_tema", nuevoTema);
-    
-    let nombreTema = nuevoTema === "" ? "Por defecto" : (nuevoTema === "tema-gamer" ? "Gamer Oscuro" : "Minimalista Elegante");
-    alert(`Tema cambiado a: ${nombreTema}`);
-  };
-}
 
 if (btnAdmin) {
   btnAdmin.onclick = () => {
@@ -1238,14 +1226,20 @@ if (btnAgregar) {
 if (btnEliminar) {
   btnEliminar.onclick = async () => {
     const productos = await obtenerProductos();
-    
+
     const formOverlay = document.createElement("div");
     formOverlay.className = "producto-overlay";
-    
-    let htmlList = productos.map((p, i) => `
+
+    let prodConIndex = productos.map((p, i) => Object.assign({}, p, { _oIdx: i }));
+    prodConIndex.sort((a, b) => {
+      if (a.categoria === b.categoria) return a.nombre.localeCompare(b.nombre);
+      return a.categoria.localeCompare(b.categoria);
+    });
+
+    let htmlList = prodConIndex.map(p => `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eaeaea; padding:12px 15px; background: #fdfdfd; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-        <span style="color:#333;"><strong>${p.nombre}</strong> <br> <small style="color:#00AEEF; font-weight:bold;">$${p.precio}</small></span>
-        <button onclick="borrarProd(${i})" style="background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; padding:8px 12px; transition:0.3s; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1"><span class="material-symbols-outlined" style="font-size:18px;">delete</span></button>
+        <span style="color:#333;"><small style="color:#888;">${p.categoria}</small><br><strong>${p.nombre}</strong> <br> <small style="color:#00AEEF; font-weight:bold;">$${p.precio}</small></span>
+        <button onclick="borrarProd(${p._oIdx})" style="background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; padding:8px 12px; transition:0.3s; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1"><span class="material-symbols-outlined" style="font-size:18px;">delete</span></button>
       </div>
     `).join("");
 
@@ -1259,7 +1253,7 @@ if (btnEliminar) {
     document.body.appendChild(formOverlay);
 
     window.borrarProd = (idx) => {
-      if(!confirm("¿Seguro que deseas borrar este producto?")) return;
+      if (!confirm("¿Seguro que deseas borrar este producto?")) return;
       productos.splice(idx, 1);
       localStorage.setItem("tech_products", JSON.stringify(productos));
       alert("Producto eliminado.");
@@ -1277,7 +1271,7 @@ if (btnEliminar) {
 if (btnEditarData) {
   btnEditarData.onclick = async () => {
     const datos = await obtenerDatosGenerales();
-    
+
     const formOverlay = document.createElement("div");
     formOverlay.className = "producto-overlay";
     formOverlay.innerHTML = `
@@ -1305,8 +1299,8 @@ if (btnEditarData) {
       const pIg = document.getElementById("edit-ig").value.trim();
       const pWa = document.getElementById("edit-wa").value.trim();
 
-      if(!pNombre || !pUbi || !pFb || !pIg || !pWa) return alert("Completa todos los campos.");
-      
+      if (!pNombre || !pUbi || !pFb || !pIg || !pWa) return alert("Completa todos los campos.");
+
       const nuevosDatos = {
         nombre: pNombre,
         ubicacion: pUbi,
@@ -1328,14 +1322,20 @@ if (btnEditarData) {
 if (btnEditarProd) {
   btnEditarProd.onclick = async () => {
     const productos = await obtenerProductos();
-    
+
     const formOverlay = document.createElement("div");
     formOverlay.className = "producto-overlay";
-    
-    let htmlList = productos.map((p, i) => `
+
+    let prodConIndex = productos.map((p, i) => Object.assign({}, p, { _oIdx: i }));
+    prodConIndex.sort((a, b) => {
+      if (a.categoria === b.categoria) return a.nombre.localeCompare(b.nombre);
+      return a.categoria.localeCompare(b.categoria);
+    });
+
+    let htmlList = prodConIndex.map(p => `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eaeaea; padding:12px 15px; background: #fdfdfd; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-        <span style="color:#333;"><strong>${p.nombre}</strong> <br> <small style="color:#00AEEF; font-weight:bold;">$${p.precio}</small></span>
-        <button onclick="editarProd(${i})" style="background:#ffc107; color:black; border:none; border-radius:6px; cursor:pointer; padding:8px 12px; transition:0.3s; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1"><span class="material-symbols-outlined" style="font-size:18px;">edit</span></button>
+        <span style="color:#333;"><small style="color:#888;">${p.categoria}</small><br><strong>${p.nombre}</strong> <br> <small style="color:#00AEEF; font-weight:bold;">$${p.precio}</small></span>
+        <button onclick="editarProd(${p._oIdx})" style="background:#ffc107; color:black; border:none; border-radius:6px; cursor:pointer; padding:8px 12px; transition:0.3s; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1"><span class="material-symbols-outlined" style="font-size:18px;">edit</span></button>
       </div>
     `).join("");
 
