@@ -423,6 +423,33 @@ async function obtenerProductos() {
   return products;
 }
 
+const DEFAULTS_FAQS = [
+  { pregunta: "¿Hacen envíos en Nicaragua?", respuesta: "Sí, realizamos envíos a todo el país." },
+  { pregunta: "¿Qué métodos de pago aceptan?", respuesta: "Aceptamos transferencias, efectivo y pagos contra entrega." },
+  { pregunta: "¿Los productos tienen garantía?", respuesta: "Sí, todos nuestros productos cuentan con garantía." },
+  { pregunta: "¿Cómo hago un pedido?", respuesta: "Puedes agregar productos al carrito y finalizar tu compra por WhatsApp." }
+];
+
+async function obtenerFAQs() {
+  let cached = localStorage.getItem("tech_faqs");
+  if (cached) return JSON.parse(cached);
+  localStorage.setItem("tech_faqs", JSON.stringify(DEFAULTS_FAQS));
+  return DEFAULTS_FAQS;
+}
+
+const DEFAULTS_REDES = [
+  { nombre: "Facebook", url: "https://www.facebook.com/p/Tech-Store-Nicaragua-61556545501927/", icono: "public" },
+  { nombre: "Instagram", url: "https://www.instagram.com/techstorenic/", icono: "photo_camera" },
+  { nombre: "WhatsApp", url: "https://wa.me/50586608628", icono: "chat" }
+];
+
+async function obtenerRedes() {
+  let cached = localStorage.getItem("tech_redes");
+  if (cached) return JSON.parse(cached);
+  localStorage.setItem("tech_redes", JSON.stringify(DEFAULTS_REDES));
+  return DEFAULTS_REDES;
+}
+
 async function obtenerDatosGenerales() {
   // Defaults actualizados — si el caché tiene URLs antiguas de Facebook las corregimos
   const DEFAULTS = {
@@ -430,7 +457,7 @@ async function obtenerDatosGenerales() {
     ubicacion: "Managua, Colonia 9 de Junio, Terminal de Ruta 119 2c al sur 1c abajo 1/2c al sur MI, Managua, Nicaragua",
     facebook: "https://www.facebook.com/p/Tech-Store-Nicaragua-61556545501927/",
     instagram: "https://www.instagram.com/techstorenic/",
-    whatsapp: "50581503116"
+    whatsapp: "50586608628"
   };
 
   let cached = localStorage.getItem("tech_datos");
@@ -466,15 +493,43 @@ async function aplicarDatosGenerales() {
 
   const footerUbicacion = document.getElementById("footer-ubicacion");
   if (footerUbicacion) footerUbicacion.textContent = "Ubicación: " + datos.ubicacion;
+}
 
-  const linkFb = document.getElementById("link-facebook");
-  if (linkFb) linkFb.href = datos.facebook;
+async function cargarRedes() {
+  const redes = await obtenerRedes();
+  const container = document.getElementById("footer-redes");
+  if (!container) return;
+  container.innerHTML = "";
+  redes.forEach(red => {
+    const a = document.createElement("a");
+    a.href = red.url;
+    a.target = "_blank";
+    a.innerHTML = `<span class="material-symbols-outlined">${red.icono}</span> ${red.nombre}`;
+    container.appendChild(a);
+  });
+}
 
-  const linkIg = document.getElementById("link-instagram");
-  if (linkIg) linkIg.href = datos.instagram;
-
-  const linkWa = document.getElementById("link-whatsapp");
-  if (linkWa) linkWa.href = "https://wa.me/" + datos.whatsapp;
+async function cargarFAQs() {
+  const faqs = await obtenerFAQs();
+  const container = document.getElementById("faq-container");
+  if (!container) return;
+  container.innerHTML = "";
+  faqs.forEach(faq => {
+    const item = document.createElement("div");
+    item.className = "faq-item";
+    item.innerHTML = `
+      <button class="faq-question">${faq.pregunta}</button>
+      <div class="faq-answer"><p>${faq.respuesta}</p></div>
+    `;
+    const btn = item.querySelector(".faq-question");
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".faq-item").forEach(i => {
+        if (i !== item) i.classList.remove("active");
+      });
+      item.classList.toggle("active");
+    });
+    container.appendChild(item);
+  });
 }
 
 // -------------------- ELEMENTOS --------------------
@@ -591,10 +646,11 @@ function comprarProducto(product) {
   formOverlay.className = "producto-overlay";
 
   const cuentas = {
-    "bac": "XXXX-XXXX-XXXX-XXXX (BAC)",
-    "banpro": "YYYY-YYYY-YYYY-YYYY (Banpro)",
-    "lafise": "ZZZZ-ZZZZ-ZZZZ-ZZZZ (Banco Lafise)",
-    "ficohsa": "WWWW-WWWW-WWWW-WWWW (Banco Ficohsa)"
+    "bac": "365 889 195 (BAC)",
+    "banpro": "100 232 001 662 12 (Banpro)",
+    "lafise": "132 090 561 (Lafise Córdoba) / 130 209 664 (Lafise Dólar)",
+    "billetera": "8150-3116 (Billetera Móvil)",
+    "ficohsa": "238 401 000 006 332 (Ficohsa)"
   };
 
   formOverlay.innerHTML = `
@@ -613,6 +669,7 @@ function comprarProducto(product) {
           <option value="bac">BAC Credomatic</option>
           <option value="banpro">Banpro</option>
           <option value="lafise">Banco Lafise</option>
+          <option value="billetera">Billetera Móvil</option>
           <option value="ficohsa">Banco Ficohsa</option>
         </select>
       </div>
@@ -620,8 +677,8 @@ function comprarProducto(product) {
       <div id="tutorial-pago" style="display: none; background: #eef7ff; padding: 15px; border-radius: 10px; border-left: 4px solid #00AEEF; margin-top: 10px;">
         <h3 style="margin-top:0; color:#003366; font-size: 16px;">Pasos para confirmar tu pago:</h3>
         <ol style="margin-bottom:0; padding-left:20px; color:#444; font-size: 14px; line-height: 1.6;">
-          <li>Transfiere la cantidad exacta de <strong>C$${product.precio}</strong> a la siguiente cuenta bancaria:</li>
-          <li style="margin: 10px 0; font-size: 15px; color: #000;"><strong><span id="cuenta-banco-texto"></span></strong></li>
+          <li>Transfiere la cantidad exacta de <strong>C$${product.precio}</strong> a nombre de: <strong>Yeltzin Jose Mendoza Ruiz</strong></li>
+          <li style="margin: 10px 0; font-size: 15px; color: #000;"><strong>Cuenta: <span id="cuenta-banco-texto"></span></strong></li>
           <li>Toma una captura de pantalla del recibo o transferencia exitosa.</li>
           <li>Haz clic en el botón de abajo para enviarnos tu comprobante por WhatsApp y terminar el pedido.</li>
         </ol>
@@ -894,28 +951,15 @@ if (btnLimpiarPrecio) {
 // -------------------- INIT --------------------
 document.addEventListener("DOMContentLoaded", () => {
   aplicarDatosGenerales();
+  cargarRedes();
+  cargarFAQs();
   if (heroContainer) cargarCategorias();
   if (productSlider) cargarProductos();
 });
 
 
 // -------------------- FAQ --------------------
-document.querySelectorAll(".faq-question").forEach(btn => {
-  btn.addEventListener("click", () => {
-
-    const item = btn.parentElement;
-
-    // cerrar otros
-    document.querySelectorAll(".faq-item").forEach(i => {
-      if (i !== item) {
-        i.classList.remove("active");
-      }
-    });
-
-    // toggle actual
-    item.classList.toggle("active");
-  });
-});
+// (El event listener de las FAQs ahora se inicializa dentro de cargarFAQs() de manera dinámica)
 
 // -------------------- ESTILOS --------------------
 const style = document.createElement("style");
@@ -1314,54 +1358,267 @@ if (btnEliminar) {
   };
 }
 
-/* -------------------- EDITAR GENERAL -------------------- */
+/* -------------------- EDITAR GENERAL Y CONFIGURACIONES -------------------- */
 if (btnEditarData) {
-  btnEditarData.onclick = async () => {
-    const datos = await obtenerDatosGenerales();
+  btnEditarData.onclick = () => abrirMenuEditarDatos();
+}
 
-    const formOverlay = document.createElement("div");
-    formOverlay.className = "producto-overlay";
-    formOverlay.innerHTML = `
-      <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
-        <h2 style="color: #17a2b8; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">settings</span> Editar Datos Generales</h2>
-        
-        <div class="form-group"><label>Nombre del Negocio</label><input type="text" id="edit-nombre" value="${datos.nombre}"></div>
-        <div class="form-group"><label>Ubicación</label><input type="text" id="edit-ubicacion" value="${datos.ubicacion}"></div>
-        <div class="form-group"><label>Facebook Link</label><input type="text" id="edit-fb" value="${datos.facebook}"></div>
-        <div class="form-group"><label>Instagram Link</label><input type="text" id="edit-ig" value="${datos.instagram}"></div>
-        <div class="form-group"><label>WhatsApp (solo números)</label><input type="text" id="edit-wa" value="${datos.whatsapp}"></div>
+async function abrirMenuEditarDatos() {
+  const formOverlay = document.createElement("div");
+  formOverlay.className = "producto-overlay";
+  formOverlay.innerHTML = `
+    <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: center; padding: 30px;">
+      <h2 style="color: #17a2b8; margin-bottom: 10px; display:flex; align-items:center; justify-content:center; gap:8px;"><span class="material-symbols-outlined">settings</span> Editar Configuraciones</h2>
+      <p style="color: #555; margin-bottom: 20px;">¿Qué apartado deseas modificar?</p>
+      
+      <button class="btn-menu-info producto-btn" style="background: #17a2b8; display:flex; align-items:center; justify-content:center; gap:8px;"><span class="material-symbols-outlined">storefront</span> Información del Negocio</button>
+      <button class="btn-menu-faqs producto-btn" style="background: #007bff; display:flex; align-items:center; justify-content:center; gap:8px;"><span class="material-symbols-outlined">quiz</span> Preguntas Frecuentes</button>
+      <button class="btn-menu-redes producto-btn" style="background: #e83e8c; display:flex; align-items:center; justify-content:center; gap:8px;"><span class="material-symbols-outlined">share</span> Redes Sociales (Footer)</button>
+      
+      <button class="btn-cancel-menu volver-btn" style="margin-top: 15px; width:100%;">Cerrar</button>
+    </div>
+  `;
+  document.body.appendChild(formOverlay);
 
-        <div style="display: flex; justify-content: space-between; margin-top: 15px; width: 100%;">
-          <button class="btn-cancel-edit-data volver-btn" style="margin-top: 0;">Cancelar</button>
-          <button class="btn-confirm-edit-data producto-btn" style="margin-top: 0; margin-left: auto; background: #17a2b8;">Guardar</button>
-        </div>
+  formOverlay.querySelector(".btn-cancel-menu").onclick = () => formOverlay.remove();
+  formOverlay.querySelector(".btn-menu-info").onclick = () => { formOverlay.remove(); abrirEditorInfo(); };
+  formOverlay.querySelector(".btn-menu-redes").onclick = () => { formOverlay.remove(); abrirEditorRedes(); };
+  formOverlay.querySelector(".btn-menu-faqs").onclick = () => { formOverlay.remove(); abrirEditorFAQs(); };
+}
+
+async function abrirEditorInfo() {
+  const datos = await obtenerDatosGenerales();
+  const formOverlay = document.createElement("div");
+  formOverlay.className = "producto-overlay";
+  formOverlay.innerHTML = `
+    <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
+      <h2 style="color: #17a2b8; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">storefront</span> Información del Negocio</h2>
+      
+      <div class="form-group"><label>Nombre del Negocio</label><input type="text" id="edit-nombre" value="${datos.nombre}"></div>
+      <div class="form-group"><label>Ubicación</label><input type="text" id="edit-ubicacion" value="${datos.ubicacion}"></div>
+      <div class="form-group"><label>WhatsApp Pedidos (solo números)</label><input type="text" id="edit-wa" value="${datos.whatsapp}"></div>
+      <small style="color:#888; font-size:12px;">Nota: Las URLs de redes sociales ahora se gestionan en su propia sección.</small>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 15px; width: 100%;">
+        <button class="btn-regresar volver-btn" style="margin-top: 0;">Volver</button>
+        <button class="btn-confirm-edit-data producto-btn" style="margin-top: 0; margin-left: auto; background: #17a2b8;">Guardar</button>
       </div>
-    `;
-    document.body.appendChild(formOverlay);
+    </div>
+  `;
+  document.body.appendChild(formOverlay);
 
-    formOverlay.querySelector(".btn-confirm-edit-data").onclick = () => {
-      const pNombre = document.getElementById("edit-nombre").value.trim();
-      const pUbi = document.getElementById("edit-ubicacion").value.trim();
-      const pFb = document.getElementById("edit-fb").value.trim();
-      const pIg = document.getElementById("edit-ig").value.trim();
-      const pWa = document.getElementById("edit-wa").value.trim();
+  formOverlay.querySelector(".btn-regresar").onclick = () => { formOverlay.remove(); abrirMenuEditarDatos(); };
 
-      if (!pNombre || !pUbi || !pFb || !pIg || !pWa) return alert("Completa todos los campos.");
+  formOverlay.querySelector(".btn-confirm-edit-data").onclick = () => {
+    const pNombre = document.getElementById("edit-nombre").value.trim();
+    const pUbi = document.getElementById("edit-ubicacion").value.trim();
+    const pWa = document.getElementById("edit-wa").value.trim();
 
-      const nuevosDatos = {
-        nombre: pNombre,
-        ubicacion: pUbi,
-        facebook: pFb,
-        instagram: pIg,
-        whatsapp: pWa
-      };
-      localStorage.setItem("tech_datos", JSON.stringify(nuevosDatos));
-      alert("Datos actualizados correctamente.");
-      formOverlay.remove();
-      aplicarDatosGenerales();
-    };
+    if (!pNombre || !pUbi || !pWa) return alert("Completa todos los campos.");
 
-    formOverlay.querySelector(".btn-cancel-edit-data").onclick = () => formOverlay.remove();
+    const nuevosDatos = Object.assign({}, datos, {
+      nombre: pNombre,
+      ubicacion: pUbi,
+      whatsapp: pWa
+    });
+    localStorage.setItem("tech_datos", JSON.stringify(nuevosDatos));
+    alert("Datos actualizados correctamente.");
+    formOverlay.remove();
+    aplicarDatosGenerales();
+    abrirMenuEditarDatos();
+  };
+}
+
+async function abrirEditorRedes() {
+  const redes = await obtenerRedes();
+  const formOverlay = document.createElement("div");
+  formOverlay.className = "producto-overlay";
+  
+  let htmlList = redes.map((r, i) => `
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eaeaea; padding:12px 15px; background: #fdfdfd; border-radius: 8px; margin-bottom: 8px;">
+      <span style="color:#333; display:flex; align-items:center; gap:8px;">
+        <span class="material-symbols-outlined" style="color:#e83e8c;">${r.icono}</span>
+        <span style="flex:1;"><strong>${r.nombre}</strong><br><small style="color:#888; word-break:break-all;">${r.url}</small></span>
+      </span>
+      <div style="display:flex; gap:5px; flex-shrink:0;">
+        <button onclick="editarRed(${i})" style="background:#ffc107; color:black; border:none; border-radius:6px; cursor:pointer; padding:6px 10px;"><span class="material-symbols-outlined" style="font-size:18px;">edit</span></button>
+        <button onclick="borrarRed(${i})" style="background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; padding:6px 10px;"><span class="material-symbols-outlined" style="font-size:18px;">delete</span></button>
+      </div>
+    </div>
+  `).join("");
+
+  formOverlay.innerHTML = `
+    <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
+      <h2 style="color: #e83e8c; text-align: center; margin-bottom: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">share</span> Redes Sociales</h2>
+      <button class="btn-agregar-red producto-btn" style="background:#28a745; width:100%; display:flex; align-items:center; justify-content:center; gap:5px;"><span class="material-symbols-outlined">add</span> Agregar Red Social</button>
+      <div class="custom-scroll-container" style="display:flex; flex-direction:column; gap:8px; max-height: 40vh; overflow-y: auto; padding-right: 10px; border: 1px solid #eee; border-radius: 8px; padding: 10px;">${htmlList || '<p style="text-align:center; color:#888;">No hay redes configuradas</p>'}</div>
+      <button class="btn-regresar volver-btn" style="margin-top:10px; width:100%;">Volver</button>
+    </div>
+  `;
+  document.body.appendChild(formOverlay);
+
+  window.borrarRed = (idx) => {
+    if (!confirm("¿Eliminar esta red social?")) return;
+    redes.splice(idx, 1);
+    localStorage.setItem("tech_redes", JSON.stringify(redes));
+    cargarRedes();
+    formOverlay.remove();
+    abrirEditorRedes();
+  };
+
+  window.editarRed = (idx) => {
+    formOverlay.remove();
+    abrirFormularioRed(idx, redes[idx]);
+  };
+
+  formOverlay.querySelector(".btn-agregar-red").onclick = () => {
+    formOverlay.remove();
+    abrirFormularioRed(-1, null);
+  };
+
+  formOverlay.querySelector(".btn-regresar").onclick = () => { formOverlay.remove(); abrirMenuEditarDatos(); };
+}
+
+async function abrirFormularioRed(idx, redActual) {
+  const redes = await obtenerRedes();
+  const esEdicion = idx >= 0;
+  const red = redActual || { nombre: "", url: "", icono: "link" };
+  
+  const formOverlay = document.createElement("div");
+  formOverlay.className = "producto-overlay";
+  formOverlay.innerHTML = `
+    <div class="producto-detalle-profesional" style="max-width: 400px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
+      <h2 style="color: #e83e8c; text-align: center; margin-bottom: 5px; width: 100%;"><span class="material-symbols-outlined">${esEdicion ? 'edit' : 'add'}</span> ${esEdicion ? 'Editar' : 'Agregar'} Red</h2>
+      
+      <div class="form-group"><label>Nombre (ej. TikTok, YouTube)</label><input type="text" id="fr-nombre" value="${red.nombre}"></div>
+      <div class="form-group"><label>Enlace (URL)</label><input type="text" id="fr-url" value="${red.url}"></div>
+      <div class="form-group">
+        <label>Ícono (Material Symbols)</label>
+        <input type="text" id="fr-icono" value="${red.icono}" placeholder="ej: public, smart_display, video_library">
+        <small style="color:#888;">Busca íconos en Google Fonts y escribe su código de icono (ej: public).</small>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 15px; width: 100%;">
+        <button class="btn-cancel volver-btn" style="margin-top: 0;">Cancelar</button>
+        <button class="btn-save producto-btn" style="margin-top: 0; margin-left: auto; background: #e83e8c;">Guardar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(formOverlay);
+
+  formOverlay.querySelector(".btn-cancel").onclick = () => { formOverlay.remove(); abrirEditorRedes(); };
+  formOverlay.querySelector(".btn-save").onclick = () => {
+    const nombre = document.getElementById("fr-nombre").value.trim();
+    const url = document.getElementById("fr-url").value.trim();
+    const icono = document.getElementById("fr-icono").value.trim() || 'link';
+
+    if (!nombre || !url) return alert("Nombre y URL son obligatorios.");
+
+    if (esEdicion) {
+      redes[idx] = { nombre, url, icono };
+    } else {
+      redes.push({ nombre, url, icono });
+    }
+
+    localStorage.setItem("tech_redes", JSON.stringify(redes));
+    cargarRedes();
+    formOverlay.remove();
+    abrirEditorRedes();
+  };
+}
+
+async function abrirEditorFAQs() {
+  const faqs = await obtenerFAQs();
+  const formOverlay = document.createElement("div");
+  formOverlay.className = "producto-overlay";
+  
+  let htmlList = faqs.map((f, i) => `
+    <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eaeaea; padding:12px 15px; background: #fdfdfd; border-radius: 8px; margin-bottom: 8px;">
+      <span style="color:#333; flex:1; padding-right:10px;">
+        <strong>${f.pregunta}</strong><br>
+        <small style="color:#555;">${f.respuesta}</small>
+      </span>
+      <div style="display:flex; gap:5px; flex-shrink:0;">
+        <button onclick="editarFaq(${i})" style="background:#ffc107; color:black; border:none; border-radius:6px; cursor:pointer; padding:6px 10px;"><span class="material-symbols-outlined" style="font-size:18px;">edit</span></button>
+        <button onclick="borrarFaq(${i})" style="background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; padding:6px 10px;"><span class="material-symbols-outlined" style="font-size:18px;">delete</span></button>
+      </div>
+    </div>
+  `).join("");
+
+  formOverlay.innerHTML = `
+    <div class="producto-detalle-profesional" style="max-width: 600px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
+      <h2 style="color: #007bff; text-align: center; margin-bottom: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">quiz</span> Preguntas Frecuentes</h2>
+      <button class="btn-agregar-faq producto-btn" style="background:#28a745; width:100%; display:flex; align-items:center; justify-content:center; gap:5px;"><span class="material-symbols-outlined">add</span> Agregar FAQ</button>
+      <div class="custom-scroll-container" style="display:flex; flex-direction:column; gap:8px; max-height: 40vh; overflow-y: auto; padding-right: 10px; border: 1px solid #eee; border-radius: 8px; padding: 10px;">${htmlList || '<p style="text-align:center; color:#888;">No hay preguntas configuradas</p>'}</div>
+      <button class="btn-regresar volver-btn" style="margin-top:10px; width:100%;">Volver</button>
+    </div>
+  `;
+  document.body.appendChild(formOverlay);
+
+  window.borrarFaq = (idx) => {
+    if (!confirm("¿Eliminar esta FAQ?")) return;
+    faqs.splice(idx, 1);
+    localStorage.setItem("tech_faqs", JSON.stringify(faqs));
+    cargarFAQs();
+    formOverlay.remove();
+    abrirEditorFAQs();
+  };
+
+  window.editarFaq = (idx) => {
+    formOverlay.remove();
+    abrirFormularioFaq(idx, faqs[idx]);
+  };
+
+  formOverlay.querySelector(".btn-agregar-faq").onclick = () => {
+    formOverlay.remove();
+    abrirFormularioFaq(-1, null);
+  };
+
+  formOverlay.querySelector(".btn-regresar").onclick = () => { formOverlay.remove(); abrirMenuEditarDatos(); };
+}
+
+async function abrirFormularioFaq(idx, faqActual) {
+  const faqs = await obtenerFAQs();
+  const esEdicion = idx >= 0;
+  const faq = faqActual || { pregunta: "", respuesta: "" };
+  
+  const formOverlay = document.createElement("div");
+  formOverlay.className = "producto-overlay";
+  formOverlay.innerHTML = `
+    <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
+      <h2 style="color: #007bff; text-align: center; margin-bottom: 5px; width: 100%;"><span class="material-symbols-outlined">${esEdicion ? 'edit' : 'add'}</span> ${esEdicion ? 'Editar' : 'Agregar'} FAQ</h2>
+      
+      <div class="form-group"><label>Pregunta</label><input type="text" id="ff-pregunta" value="${faq.pregunta.replace(/"/g, '&quot;')}"></div>
+      <div class="form-group">
+        <label>Respuesta</label>
+        <textarea id="ff-respuesta" rows="4" style="padding:10px; border:1px solid #ccc; border-radius:8px; font-size:15px; outline:none; resize:vertical; font-family:inherit;">${faq.respuesta.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 15px; width: 100%;">
+        <button class="btn-cancel volver-btn" style="margin-top: 0;">Cancelar</button>
+        <button class="btn-save producto-btn" style="margin-top: 0; margin-left: auto; background: #007bff;">Guardar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(formOverlay);
+
+  formOverlay.querySelector(".btn-cancel").onclick = () => { formOverlay.remove(); abrirEditorFAQs(); };
+  formOverlay.querySelector(".btn-save").onclick = () => {
+    const pregunta = document.getElementById("ff-pregunta").value.trim();
+    const respuesta = document.getElementById("ff-respuesta").value.trim();
+
+    if (!pregunta || !respuesta) return alert("Ambos campos son obligatorios.");
+
+    if (esEdicion) {
+      faqs[idx] = { pregunta, respuesta };
+    } else {
+      faqs.push({ pregunta, respuesta });
+    }
+
+    localStorage.setItem("tech_faqs", JSON.stringify(faqs));
+    cargarFAQs();
+    formOverlay.remove();
+    abrirEditorFAQs();
   };
 }
 
