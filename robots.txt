@@ -1,0 +1,13 @@
+# robots.txt — Tech Store Nicaragua
+# https://techstorenicaragua.com/
+
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://techstorenicaragua.com/sitemap.xml
+
+# Bloquear archivos innecesarios para los crawlers
+Disallow: /.git/
+Disallow: /.vs/
+Disallow: /.idea/
