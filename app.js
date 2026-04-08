@@ -821,26 +821,74 @@ async function cargarProductos() {
 
     productSlider.innerHTML = "";
 
-    products.slice(0, 3).forEach(product => {
+    const featuredProducts = products.slice(0, 3);
+
+    featuredProducts.forEach(product => {
       const card = document.createElement("div");
       card.className = "card";
+      card.setAttribute("role", "listitem");
+      card.setAttribute("itemscope", "");
+      card.setAttribute("itemtype", "https://schema.org/Product");
 
       card.innerHTML = `
-        <img src="${product.imagen || 'img/generico.png'}" style="aspect-ratio:1/1; object-fit:cover; width:100%; border-radius:15px; border: 1px solid #eee; background: white;">
-        <h3>${product.nombre}</h3>
-        <p class="categoria">${product.categoria}</p>
-        <p class="descripcion">${product.descripcion}</p>
-        <p class="precio">C$${product.precio}</p>
+        <img src="${product.imagen || 'img/generico.png'}" alt="${product.nombre} - ${product.categoria} en Nicaragua" loading="lazy" style="aspect-ratio:1/1; object-fit:cover; width:100%; border-radius:15px; border: 1px solid #eee; background: white;" itemprop="image">
+        <h3 itemprop="name">${product.nombre}</h3>
+        <p class="categoria" itemprop="category">${product.categoria}</p>
+        <p class="descripcion" itemprop="description">${product.descripcion}</p>
+        <p class="precio" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+          <span itemprop="price" content="${product.precio}">C$${product.precio}</span>
+          <meta itemprop="priceCurrency" content="NIO">
+          <meta itemprop="availability" content="https://schema.org/InStock">
+        </p>
       `;
 
       card.onclick = () => mostrarProducto(product);
       productSlider.appendChild(card);
     });
 
+    // Inyectar schema.org ItemList de productos destacados
+    inyectarSchemaProductosDestacados(featuredProducts);
+
   } catch (err) {
     console.error(err);
   }
 }
+
+function inyectarSchemaProductosDestacados(products) {
+  const existing = document.getElementById('schema-productos-destacados');
+  if (existing) existing.remove();
+
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Productos Destacados - Tech Store Nicaragua",
+    "itemListElement": products.map((p, i) => ({
+      "@type": "ListItem",
+      "position": i + 1,
+      "item": {
+        "@type": "Product",
+        "name": p.nombre,
+        "description": p.descripcion,
+        "image": p.imagen ? `https://techstore-nicaragua.com/${p.imagen}` : undefined,
+        "category": p.categoria,
+        "offers": {
+          "@type": "Offer",
+          "price": p.precio,
+          "priceCurrency": "NIO",
+          "availability": "https://schema.org/InStock",
+          "seller": { "@type": "Organization", "name": "Tech Store Nicaragua" }
+        }
+      }
+    }))
+  };
+
+  const script = document.createElement('script');
+  script.type = 'application/ld+json';
+  script.id = 'schema-productos-destacados';
+  script.textContent = JSON.stringify(schema);
+  document.head.appendChild(script);
+}
+
 
 // -------------------- BUSCADOR --------------------
 function ejecutarBusqueda() {
@@ -903,13 +951,20 @@ async function cargarCatalogo(categoria = null, buscar = "") {
     filtrados.forEach(product => {
       const card = document.createElement("div");
       card.className = "card";
+      card.setAttribute("role", "listitem");
+      card.setAttribute("itemscope", "");
+      card.setAttribute("itemtype", "https://schema.org/Product");
 
       card.innerHTML = `
-        <img src="${product.imagen || 'img/generico.png'}" style="aspect-ratio: 1/1; object-fit: cover; width: 100%; border-radius: 8px;">
-        <h3>${product.nombre}</h3>
-        <p class="categoria">${product.categoria}</p>
-        <p class="descripcion">${product.descripcion}</p>
-        <p class="precio">C$${product.precio}</p>
+        <img src="${product.imagen || 'img/generico.png'}" alt="${product.nombre} - ${product.categoria} en Nicaragua | Tech Store Nicaragua" loading="lazy" style="aspect-ratio: 1/1; object-fit: cover; width: 100%; border-radius: 8px;" itemprop="image">
+        <h3 itemprop="name">${product.nombre}</h3>
+        <p class="categoria" itemprop="category">${product.categoria}</p>
+        <p class="descripcion" itemprop="description">${product.descripcion}</p>
+        <p class="precio" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+          <span itemprop="price" content="${product.precio}">C$${product.precio}</span>
+          <meta itemprop="priceCurrency" content="NIO">
+          <meta itemprop="availability" content="https://schema.org/InStock">
+        </p>
       `;
 
       card.onclick = () => mostrarProducto(product);
