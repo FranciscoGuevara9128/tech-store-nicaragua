@@ -1,0 +1,42 @@
+{
+  "name": "Tech Store Nicaragua",
+  "short_name": "TechStore NI",
+  "description": "Tu tienda de tecnología y gadgets en Managua, Nicaragua. Auriculares gamer, smartwatches, powerbanks, intercomunicadores y más.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#001a33",
+  "theme_color": "#003366",
+  "lang": "es-NI",
+  "orientation": "portrait-primary",
+  "categories": ["shopping", "electronics"],
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Catálogo de Productos",
+      "short_name": "Catálogo",
+      "description": "Ver todos nuestros productos disponibles",
+      "url": "/?catalogo=true",
+      "icons": [{ "src": "logo.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Contactar por WhatsApp",
+      "short_name": "WhatsApp",
+      "description": "Escríbenos directamente",
+      "url": "https://wa.me/50586608628",
+      "icons": [{ "src": "logo.png", "sizes": "96x96" }]
+    }
+  ]
+}
