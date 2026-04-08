@@ -19,7 +19,11 @@
   <meta name="ICBM" content="12.1343722, -86.2091626">
   <meta name="language" content="Spanish">
 
-  <!-- Canonical URL (actualizar cuando tengas dominio propio) -->
+  <!-- ===================== PERFORMANCE: PRELOAD recursos críticos ===================== -->
+  <link rel="preload" href="logo.png" as="image" type="image/png">
+  <link rel="preload" href="styles.css" as="style">
+
+  <!-- Canonical URL -->
   <link rel="canonical" href="https://techstore-nicaragua.com/">
 
   <!-- ===================== OPEN GRAPH (Facebook/LinkedIn) ===================== -->
@@ -111,6 +115,26 @@
   }
   </script>
 
+  <!-- ===================== SCHEMA.ORG - WebSite + SearchAction ===================== -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "Tech Store Nicaragua",
+    "url": "https://techstore-nicaragua.com/",
+    "description": "Tienda online de tecnología en Nicaragua. Auriculares, smartwatches, powerbanks y más.",
+    "inLanguage": "es-NI",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": {
+        "@type": "EntryPoint",
+        "urlTemplate": "https://techstore-nicaragua.com/?buscar={search_term_string}"
+      },
+      "query-input": "required name=search_term_string"
+    }
+  }
+  </script>
+
   <!-- ===================== SCHEMA.ORG - BreadcrumbList ===================== -->
   <script type="application/ld+json">
   {
@@ -136,7 +160,7 @@
       {
         "@type": "Question",
         "name": "¿Hacen envíos en Nicaragua?",
-        "acceptedAnswer": {"@type":"Answer","text":"Sí, realizamos envíos a todo el país."}
+        "acceptedAnswer": {"@type":"Answer","text":"Sí, realizamos envíos a todo el país. Trabajamos con transportistas confiables que entregan en Managua y departamentos."}
       },
       {
         "@type": "Question",
@@ -146,12 +170,32 @@
       {
         "@type": "Question",
         "name": "¿Los productos tienen garantía?",
-        "acceptedAnswer": {"@type":"Answer","text":"Sí, todos nuestros productos cuentan con garantía."}
+        "acceptedAnswer": {"@type":"Answer","text":"Sí, todos nuestros productos cuentan con garantía. Ante cualquier defecto de fábrica te apoyamos con el cambio o reembolso."}
       },
       {
         "@type": "Question",
         "name": "¿Cómo hago un pedido?",
-        "acceptedAnswer": {"@type":"Answer","text":"Puedes contactarnos directamente por WhatsApp al +505 8660-8628 o a través de nuestra página. Selecciona el producto y finaliza tu compra de forma rápida y segura."}
+        "acceptedAnswer": {"@type":"Answer","text":"Puedes contactarnos directamente por WhatsApp al +505 8660-8628. Selecciona el producto de nuestro catálogo y envíanos un mensaje para coordinar tu compra."}
+      },
+      {
+        "@type": "Question",
+        "name": "¿Dónde están ubicados?",
+        "acceptedAnswer": {"@type":"Answer","text":"Estamos en Managua, Colonia 9 de Junio, Terminal de Ruta 119, 2 cuadras al sur, 1 cuadra abajo, media cuadra al sur, mano izquierda. También atendemos pedidos en línea con envío a domicilio."}
+      },
+      {
+        "@type": "Question",
+        "name": "¿Venden auriculares gamer en Nicaragua?",
+        "acceptedAnswer": {"@type":"Answer","text":"Sí, contamos con una amplia variedad de auriculares gamer: modelos P30, P36 Cobra, P50, K89, Zombiescast B5, Inva, X35 y más, con precios desde C$500."}
+      },
+      {
+        "@type": "Question",
+        "name": "¿Venden intercomunicadores EJEAS en Nicaragua?",
+        "acceptedAnswer": {"@type":"Answer","text":"Sí, somos distribuidores de intercomunicadores EJEAS en Nicaragua. Tenemos los modelos V6 Pro, Q7, Q8, K1 y X10 disponibles para motociclistas."}
+      },
+      {
+        "@type": "Question",
+        "name": "¿Cuánto tarda el envío?",
+        "acceptedAnswer": {"@type":"Answer","text":"Los envíos dentro de Managua se coordinan el mismo día o al día siguiente. Los envíos a departamentos dependen del transportista, generalmente de 1 a 3 días hábiles."}
       }
     ]
   }
@@ -243,6 +287,21 @@
     <div class="grid" id="product-slider" role="list" aria-label="Lista de productos destacados">
       <!-- Las cards de productos destacados se cargarán por JS -->
     </div>
+    <!-- Fallback estático para Google (invisible al usuario, legible por bots) -->
+    <noscript>
+      <ul style="display:none;" aria-hidden="true">
+        <li><strong>P30</strong> — Auriculares Gamer en Nicaragua. Precio: C$500</li>
+        <li><strong>P36 Cobra</strong> — Auriculares Gaming Premium en Nicaragua. Precio: C$500</li>
+        <li><strong>Smartwatch I90 Suit Extreme</strong> — Smartwatch deportivo en Nicaragua. Precio: C$1090</li>
+        <li><strong>Smartwatch Howear Ultra 2</strong> — Smartwatch AMOLED en Nicaragua. Precio: C$2360</li>
+        <li><strong>Powerbank 50000 mAh</strong> — Banco de carga en Nicaragua. Precio: C$1250</li>
+        <li><strong>EJEAS V6 Pro</strong> — Intercomunicador para moto en Nicaragua. Precio: C$1750</li>
+        <li><strong>EJEAS Q7</strong> — Intercomunicador Bluetooth moto Nicaragua. Precio: C$2470</li>
+        <li><strong>EJEAS Q8</strong> — Intercomunicador Mesh para motociclistas. Precio: C$3680</li>
+        <li><strong>Cargador Xiaomi 120W</strong> — Carga rápida Nicaragua. Precio: C$990</li>
+        <li><strong>Micrófono K15</strong> — Micrófono inalámbrico Lavalier Nicaragua. Precio: C$700</li>
+      </ul>
+    </noscript>
   </section>
 
   <!-- CATÁLOGO COMPLETO -->
