@@ -381,46 +381,31 @@ const PRODUCTOS_BD = [
   }
 ];
 
-// -------------------- ADMIN CACHE --------------------
-async function obtenerProductos() {
-  const cached = localStorage.getItem("tech_productos_v2");
-  if (cached) {
-    let parsed = JSON.parse(cached);
-    let bdImgMap = {};
-    PRODUCTOS_BD.forEach(p => bdImgMap[p.nombre] = p.imagen);
-    parsed = parsed.map(p => {
-      // Usar imagen de BD si el producto no tiene una propia
-      if (bdImgMap[p.nombre] && (!p.imagen || p.imagen === 'img/generico.png')) {
-        p.imagen = bdImgMap[p.nombre];
-      }
+// -------------------- ADMIN CACHE Y API --------------------
+const GOOGLE_SHEETS_API = "https://script.google.com/macros/s/AKfycbyX1fF2HE1jORlndPy0I44jXAnlP3L1TznNARNDlwVDwMgptQdf5DZmDDcEl4to_KXILw/exec";
 
-      // Migración de categoría de Ejeas
-      if (p.categoria === 'Intercomunicadores Ejeas') {
-        p.categoria = 'Motorizados';
+async function obtenerProductos() {
+  try {
+    const res = await fetch(GOOGLE_SHEETS_API);
+    if (res.ok) {
+      let products = await res.json();
+      if (products && products.length > 0) {
+        products = products.map(p => {
+          p.precio = parseFloat(p.precio) || 0;
+          return p;
+        });
+        localStorage.setItem("tech_productos_v2", JSON.stringify(products));
+        return products;
       }
-      // Migrar URLs antiguas de Drive (uc?export=view → thumbnail)
-      if (p.imagen && p.imagen.includes('drive.google.com/uc')) {
-        const idMatch = p.imagen.match(/[?&]id=([a-zA-Z0-9_-]+)/);
-        if (idMatch) p.imagen = `https://drive.google.com/thumbnail?id=${idMatch[1]}&sz=w600`;
-      }
-      return p;
-    });
-    localStorage.setItem("tech_productos_v2", JSON.stringify(parsed));
-    return parsed;
+    }
+  } catch (err) {
+    console.error("Error cargando de Google Sheets:", err);
   }
 
-  let products = JSON.parse(JSON.stringify(PRODUCTOS_BD));
+  const cached = localStorage.getItem("tech_productos_v2");
+  if (cached) return JSON.parse(cached);
 
-  // Respetar eliminaciones permanentes
-  const deleted = JSON.parse(localStorage.getItem("tech_prod_deleted") || "[]");
-  products = products.filter(p => !deleted.includes(p.nombre));
-
-  // Respetar productos agregados manualmente
-  const added = JSON.parse(localStorage.getItem("tech_prod_added") || "[]");
-  products = products.concat(added);
-
-  localStorage.setItem("tech_productos_v2", JSON.stringify(products));
-  return products;
+  return JSON.parse(JSON.stringify(PRODUCTOS_BD));
 }
 
 const DEFAULTS_FAQS = [
@@ -1198,10 +1183,28 @@ const btnEditarProd = document.getElementById("btn-editar-producto");
 const btnRecargarCache = document.getElementById("btn-recargar-cache");
 
 if (btnRecargarCache) {
+  btnRecargarCache.innerHTML = `<span class="material-symbols-outlined">sync</span> Subir al Excel`;
+  btnRecargarCache.title = "Subir los productos iniciales al Excel (Hazlo solo una vez)";
+  btnRecargarCache.style.background = "#fd7e14";
+  
   btnRecargarCache.onclick = () => {
-    if (confirm("¿Forzar recarga usando los precios del código base?")) {
-      localStorage.removeItem("tech_productos_v2");
-      location.reload();
+    if (confirm("¿Sincronizar todos los productos locales hacia el Excel? Haz esto solo si tu Excel está vacío.")) {
+      btnRecargarCache.innerHTML = `<span class="material-symbols-outlined">sync</span> Sincronizando...`;
+      btnRecargarCache.disabled = true;
+      (async () => {
+        let products = JSON.parse(JSON.stringify(PRODUCTOS_BD));
+        for (let p of products) {
+          try {
+            await fetch(GOOGLE_SHEETS_API, {
+              method: 'POST',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({ action: "add", nombre: p.nombre, categoria: p.categoria, precio: p.precio, descripcion: p.descripcion, imagen: p.imagen })
+            });
+          } catch(e) {}
+        }
+        alert("Sincronización completa. Por favor recarga la página.");
+        location.reload();
+      })();
     }
   };
 }
@@ -1328,25 +1331,32 @@ if (btnAgregar) {
 
       if (!pNombre || !pCat || !pPrecio || !pDesc) return alert("Completa todos los campos obligatorios.");
 
-      const productos = await obtenerProductos();
-      const nuevoProd = {
-        nombre: pNombre,
-        categoria: pCat,
-        precio: parseFloat(pPrecio),
-        descripcion: pDesc,
-        imagen: pImagen
-      };
-      productos.push(nuevoProd);
+      const btnGuardar = formOverlay.querySelector(".btn-confirm-add");
+      btnGuardar.textContent = "Guardando...";
+      btnGuardar.disabled = true;
 
-      const addedList = JSON.parse(localStorage.getItem("tech_prod_added") || "[]");
-      addedList.push(nuevoProd);
-      localStorage.setItem("tech_prod_added", JSON.stringify(addedList));
-
-      localStorage.setItem("tech_productos_v2", JSON.stringify(productos));
-      alert("Producto agregado correctamente.");
-      formOverlay.remove();
-      cargarProductos();
-      if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
+      try {
+        await fetch(GOOGLE_SHEETS_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: "add",
+            nombre: pNombre,
+            categoria: pCat,
+            precio: parseFloat(pPrecio),
+            descripcion: pDesc,
+            imagen: pImagen || 'img/generico.png'
+          })
+        });
+        alert("Producto agregado en Google Sheets.");
+        formOverlay.remove();
+        cargarProductos();
+        if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
+      } catch(e) {
+        alert("Error guardando en Sheets");
+        btnGuardar.textContent = "Agregar";
+        btnGuardar.disabled = false;
+      }
     };
 
     formOverlay.querySelector(".btn-cancel-add").onclick = () => formOverlay.remove();
@@ -1382,31 +1392,24 @@ if (btnEliminar) {
     `;
     document.body.appendChild(formOverlay);
 
-    window.borrarProd = (idx) => {
-      if (!confirm("¿Seguro que deseas borrar este producto?")) return;
-      const borrado = productos.splice(idx, 1)[0];
+    window.borrarProd = async (idx) => {
+      if (!confirm("¿Seguro que deseas borrar este producto permanentemente de Google Sheets?")) return;
+      const borrado = productos[idx];
 
-      // Guardar permanentemente su nombre en la lista de eliminados
-      const deletedList = JSON.parse(localStorage.getItem("tech_prod_deleted") || "[]");
-      if (!deletedList.includes(borrado.nombre)) {
-        deletedList.push(borrado.nombre);
-        localStorage.setItem("tech_prod_deleted", JSON.stringify(deletedList));
+      try {
+        await fetch(GOOGLE_SHEETS_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: "delete", nombre: borrado.nombre })
+        });
+        alert("Producto eliminado de Google Sheets.");
+        formOverlay.remove();
+        cargarProductos();
+        if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
+        btnEliminar.click(); 
+      } catch(e) {
+        alert("Error al borrar en Sheets.");
       }
-
-      // Si el producto estaba en la lista de agregados, quitarlo
-      const addedList = JSON.parse(localStorage.getItem("tech_prod_added") || "[]");
-      const addedIdx = addedList.findIndex(p => p.nombre === borrado.nombre);
-      if (addedIdx > -1) {
-        addedList.splice(addedIdx, 1);
-        localStorage.setItem("tech_prod_added", JSON.stringify(addedList));
-      }
-
-      localStorage.setItem("tech_productos_v2", JSON.stringify(productos));
-      alert("Producto eliminado.");
-      formOverlay.remove();
-      cargarProductos();
-      if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
-      btnEliminar.click(); // reabrir para mostrar actualizado
     };
 
     formOverlay.querySelector(".btn-cancel-del").onclick = () => formOverlay.remove();
@@ -1756,7 +1759,7 @@ if (btnEditarProd) {
         });
       });
 
-      formEdit.querySelector(".btn-confirm-edi").onclick = () => {
+      formEdit.querySelector(".btn-confirm-edi").onclick = async () => {
         const ediNombre = document.getElementById("edi-nombre").value.trim();
         const ediCat = document.getElementById("edi-categoria").value.trim();
         const ediPrecio = document.getElementById("edi-precio").value.trim();
@@ -1765,21 +1768,35 @@ if (btnEditarProd) {
 
         if (!ediNombre || !ediCat || !ediPrecio || !ediDesc) return alert("Completa todos los campos.");
 
-        productos[idx] = {
-          nombre: ediNombre,
-          categoria: ediCat,
-          precio: parseFloat(ediPrecio),
-          descripcion: ediDesc,
-          imagen: ediImagen || p.imagen || 'img/generico.png'
-        };
-        localStorage.setItem("tech_productos_v2", JSON.stringify(productos));
-        alert("Producto modificado correctamente.");
-        formEdit.remove();
-        formOverlay.remove();
+        const btnGuardarEdi = formEdit.querySelector(".btn-confirm-edi");
+        btnGuardarEdi.textContent = "Guardando...";
+        btnGuardarEdi.disabled = true;
 
-        cargarProductos();
-        if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
-        btnEditarProd.click();
+        try {
+          await fetch(GOOGLE_SHEETS_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: "edit",
+              old_nombre: p.nombre,
+              nombre: ediNombre,
+              categoria: ediCat,
+              precio: parseFloat(ediPrecio),
+              descripcion: ediDesc,
+              imagen: ediImagen || p.imagen || 'img/generico.png'
+            })
+          });
+          alert("Producto modificado en Google Sheets.");
+          formEdit.remove();
+          formOverlay.remove();
+          cargarProductos();
+          if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
+          btnEditarProd.click();
+        } catch(e) {
+          alert("Error modificando en Sheets.");
+          btnGuardarEdi.textContent = "Guardar Cambios";
+          btnGuardarEdi.disabled = false;
+        }
       };
 
       formEdit.querySelector(".btn-cancel-edi").onclick = () => formEdit.remove();
