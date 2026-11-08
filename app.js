@@ -1230,7 +1230,6 @@ if (btnLimpiarPrecio) {
 
 // -------------------- INIT --------------------
 document.addEventListener("DOMContentLoaded", async () => {
-  await sincronizarConfigRemota();
   aplicarDatosGenerales();
   cargarRedes();
   cargarFAQs();
@@ -1250,6 +1249,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   } else if (abrirCatalogo === "true") {
     cargarCatalogo(null, "");
   }
+
+  // Sincronizar configuración remota en segundo plano sin bloquear el renderizado inicial
+  await sincronizarConfigRemota();
+  aplicarDatosGenerales();
+  cargarRedes();
+  cargarFAQs();
+  if (heroContainer) cargarCategorias();
 });
 
 /* -------------------- ADMIN LOGIC -------------------- */
