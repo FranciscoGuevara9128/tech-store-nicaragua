@@ -381,46 +381,132 @@ const PRODUCTOS_BD = [
   }
 ];
 
+// -------------------- UTILIDADES DE SEGURIDAD Y TEXTO --------------------
+function escapeHtml(str) {
+  if (str === null || str === undefined) return "";
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function normalizarTexto(str) {
+  if (!str) return "";
+  return String(str)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+}
+
 // -------------------- ADMIN CACHE Y API --------------------
 const GOOGLE_SHEETS_API = "https://script.google.com/macros/s/AKfycbyX1fF2HE1jORlndPy0I44jXAnlP3L1TznNARNDlwVDwMgptQdf5DZmDDcEl4to_KXILw/exec";
 
-async function obtenerProductos() {
-  try {
-    const res = await fetch(GOOGLE_SHEETS_API);
-    if (res.ok) {
-      let products = await res.json();
-      if (products && products.length > 0) {
-        products = products.map(p => {
-          p.precio = parseFloat(p.precio) || 0;
-          return p;
-        });
-        localStorage.setItem("tech_productos_v2", JSON.stringify(products));
-        return products;
-      }
-    }
-  } catch (err) {
-    console.error("Error cargando de Google Sheets:", err);
+async function enviarPostAdmin(payload) {
+  const user = sessionStorage.getItem("adminUser") || "";
+  const pass = sessionStorage.getItem("adminPass") || "";
+  const bodyObj = Object.assign({}, payload, { user, pass });
+
+  const res = await fetch(GOOGLE_SHEETS_API, {
+    method: "POST",
+    headers: { "Content-Type": "text/plain;charset=utf-8" },
+    body: JSON.stringify(bodyObj)
+  });
+
+  if (!res.ok) {
+    throw new Error("Error HTTP " + res.status);
   }
 
-  const cached = localStorage.getItem("tech_productos_v2");
-  if (cached) return JSON.parse(cached);
+  const data = await res.json();
+  if (data.status === "error") {
+    throw new Error(data.message || "Error en el servidor de Google Sheets");
+  }
+  return data;
+}
 
-  return JSON.parse(JSON.stringify(PRODUCTOS_BD));
+let productosEnMemoria = null;
+let promesaProductos = null;
+
+async function obtenerProductos(forzarRecarga = false) {
+  if (!forzarRecarga && productosEnMemoria) {
+    return productosEnMemoria;
+  }
+
+  if (!forzarRecarga && promesaProductos) {
+    return promesaProductos;
+  }
+
+  promesaProductos = (async () => {
+    try {
+      const res = await fetch(GOOGLE_SHEETS_API);
+      if (res.ok) {
+        let products = await res.json();
+        if (Array.isArray(products) && products.length > 0) {
+          products = products.map(p => {
+            p.precio = parseFloat(p.precio) || 0;
+            return p;
+          });
+          productosEnMemoria = products;
+          localStorage.setItem("tech_productos_v2", JSON.stringify(products));
+          return products;
+        }
+      }
+    } catch (err) {
+      console.error("Error cargando de Google Sheets:", err);
+    } finally {
+      promesaProductos = null;
+    }
+
+    const cached = localStorage.getItem("tech_productos_v2");
+    if (cached) {
+      try {
+        productosEnMemoria = JSON.parse(cached);
+        return productosEnMemoria;
+      } catch (e) {}
+    }
+
+    productosEnMemoria = JSON.parse(JSON.stringify(PRODUCTOS_BD));
+    return productosEnMemoria;
+  })();
+
+  return promesaProductos;
 }
 
 const DEFAULTS_FAQS = [
-  { pregunta: "¿Hacen envíos en Nicaragua?", respuesta: "Sí, realizamos envíos a todo el país." },
-  { pregunta: "¿Qué métodos de pago aceptan?", respuesta: "Aceptamos transferencias, efectivo y pagos contra entrega." },
-  { pregunta: "¿Los productos tienen garantía?", respuesta: "Sí, todos nuestros productos cuentan con garantía." },
-  { pregunta: "¿Cómo hago un pedido?", respuesta: "Puedes agregar productos al carrito y finalizar tu compra por WhatsApp." }
+  {
+    pregunta: "¿Hacen envíos en Nicaragua?",
+    respuesta: "Sí, realizamos envíos a todo el país. Trabajamos con transportistas confiables que entregan en Managua y departamentos."
+  },
+  {
+    pregunta: "¿Qué métodos de pago aceptan?",
+    respuesta: "Aceptamos transferencias bancarias (BAC, Banpro, Lafise, Ficohsa), billetera móvil, efectivo y pagos contra entrega."
+  },
+  {
+    pregunta: "¿Los productos tienen garantía?",
+    respuesta: "Sí, todos nuestros productos cuentan con garantía. Ante cualquier defecto de fábrica te apoyamos con el cambio o reembolso."
+  },
+  {
+    pregunta: "¿Cómo hago un pedido?",
+    respuesta: "Puedes contactarnos directamente por WhatsApp al +505 8660-8628. Selecciona el producto de nuestro catálogo y envíanos un mensaje para coordinar tu compra."
+  },
+  {
+    pregunta: "¿Dónde están ubicados?",
+    respuesta: "Estamos en Managua, Colonia 9 de Junio, Terminal de Ruta 119, 2 cuadras al sur, 1 cuadra abajo, media cuadra al sur, mano izquierda. También atendemos pedidos en línea con envío a domicilio."
+  },
+  {
+    pregunta: "¿Venden auriculares gamer en Nicaragua?",
+    respuesta: "Sí, contamos con una amplia variedad de auriculares gamer: modelos P30, P36 Cobra, P50, K89, Zombiescast B5, Inva, X35 y más, con precios desde C$500."
+  },
+  {
+    pregunta: "¿Venden intercomunicadores EJEAS en Nicaragua?",
+    respuesta: "Sí, somos distribuidores de intercomunicadores EJEAS en Nicaragua. Tenemos los modelos V6 Pro, Q7, Q8, K1 y X10 disponibles para motociclistas."
+  },
+  {
+    pregunta: "¿Cuánto tarda el envío?",
+    respuesta: "Los envíos dentro de Managua se coordinan el mismo día o al día siguiente. Los envíos a departamentos dependen del transportista, generalmente de 1 a 3 días hábiles."
+  }
 ];
-
-async function obtenerFAQs() {
-  let cached = localStorage.getItem("tech_faqs");
-  if (cached) return JSON.parse(cached);
-  localStorage.setItem("tech_faqs", JSON.stringify(DEFAULTS_FAQS));
-  return DEFAULTS_FAQS;
-}
 
 const DEFAULTS_REDES = [
   { nombre: "Facebook", url: "https://www.facebook.com/p/Tech-Store-Nicaragua-61556545501927/", icono: "public" },
@@ -428,43 +514,69 @@ const DEFAULTS_REDES = [
   { nombre: "WhatsApp", url: "https://wa.me/50586608628", icono: "chat" }
 ];
 
+const DEFAULTS_DATOS = {
+  nombre: "Tech Store Nicaragua",
+  ubicacion: "Managua, Colonia 9 de Junio, Terminal de Ruta 119 2c al sur 1c abajo 1/2c al sur MI, Managua, Nicaragua",
+  facebook: "https://www.facebook.com/p/Tech-Store-Nicaragua-61556545501927/",
+  instagram: "https://www.instagram.com/techstorenic/",
+  whatsapp: "50586608628"
+};
+
+async function sincronizarConfigRemota() {
+  try {
+    const res = await fetch(`${GOOGLE_SHEETS_API}?type=config`);
+    if (res.ok) {
+      const data = await res.json();
+      if (data && data.status === "success") {
+        if (data.datos) localStorage.setItem("tech_datos", JSON.stringify(data.datos));
+        if (Array.isArray(data.faqs) && data.faqs.length > 0) localStorage.setItem("tech_faqs", JSON.stringify(data.faqs));
+        if (Array.isArray(data.redes) && data.redes.length > 0) localStorage.setItem("tech_redes", JSON.stringify(data.redes));
+      }
+    }
+  } catch (e) {
+    // Si el endpoint aún no soporta ?type=config, usa localStorage silenciosamente
+  }
+}
+
+async function obtenerFAQs() {
+  const cached = localStorage.getItem("tech_faqs");
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch (e) {}
+  }
+  localStorage.setItem("tech_faqs", JSON.stringify(DEFAULTS_FAQS));
+  return DEFAULTS_FAQS;
+}
+
 async function obtenerRedes() {
-  let cached = localStorage.getItem("tech_redes");
-  if (cached) return JSON.parse(cached);
+  const cached = localStorage.getItem("tech_redes");
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch (e) {}
+  }
   localStorage.setItem("tech_redes", JSON.stringify(DEFAULTS_REDES));
   return DEFAULTS_REDES;
 }
 
 async function obtenerDatosGenerales() {
-  // Defaults actualizados — si el caché tiene URLs antiguas de Facebook las corregimos
-  const DEFAULTS = {
-    nombre: "Tech Store Nicaragua",
-    ubicacion: "Managua, Colonia 9 de Junio, Terminal de Ruta 119 2c al sur 1c abajo 1/2c al sur MI, Managua, Nicaragua",
-    facebook: "https://www.facebook.com/p/Tech-Store-Nicaragua-61556545501927/",
-    instagram: "https://www.instagram.com/techstorenic/",
-    whatsapp: "50586608628"
-  };
-
-  let cached = localStorage.getItem("tech_datos");
+  const cached = localStorage.getItem("tech_datos");
   if (cached) {
-    let datos = JSON.parse(cached);
-    // Forzar actualización si la URL de Facebook o WhatsApp difiere de los defaults
-    const needsUpdate =
-      datos.ubicacion === "Managua, Nicaragua" ||
-      datos.facebook !== DEFAULTS.facebook ||
-      datos.whatsapp !== DEFAULTS.whatsapp;
-    if (needsUpdate) {
-      datos = Object.assign({}, DEFAULTS, {
-        nombre: datos.nombre || DEFAULTS.nombre,
-        ubicacion: (datos.ubicacion && datos.ubicacion !== "Managua, Nicaragua") ? datos.ubicacion : DEFAULTS.ubicacion
-      });
-      localStorage.setItem("tech_datos", JSON.stringify(datos));
-    }
-    return datos;
+    try {
+      const datos = JSON.parse(cached);
+      if (datos.ubicacion === "Managua, Nicaragua") {
+        datos.ubicacion = DEFAULTS_DATOS.ubicacion;
+        localStorage.setItem("tech_datos", JSON.stringify(datos));
+      }
+      return Object.assign({}, DEFAULTS_DATOS, datos);
+    } catch (e) {}
   }
 
-  localStorage.setItem("tech_datos", JSON.stringify(DEFAULTS));
-  return DEFAULTS;
+  localStorage.setItem("tech_datos", JSON.stringify(DEFAULTS_DATOS));
+  return Object.assign({}, DEFAULTS_DATOS);
 }
 
 async function aplicarDatosGenerales() {
@@ -489,9 +601,28 @@ async function cargarRedes() {
     const a = document.createElement("a");
     a.href = red.url;
     a.target = "_blank";
-    a.innerHTML = `<span class="material-symbols-outlined">${red.icono}</span> ${red.nombre}`;
+    a.rel = "noopener noreferrer";
+    a.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${escapeHtml(red.icono)}</span> ${escapeHtml(red.nombre)}`;
     container.appendChild(a);
   });
+}
+
+function actualizarSchemaFAQs(faqs) {
+  const schemaScript = document.getElementById("schema-faq");
+  if (!schemaScript) return;
+  const schema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqs.map(f => ({
+      "@type": "Question",
+      "name": f.pregunta,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": f.respuesta
+      }
+    }))
+  };
+  schemaScript.textContent = JSON.stringify(schema);
 }
 
 async function cargarFAQs() {
@@ -502,58 +633,67 @@ async function cargarFAQs() {
   faqs.forEach(faq => {
     const item = document.createElement("div");
     item.className = "faq-item";
+    item.setAttribute("role", "listitem");
     item.innerHTML = `
-      <button class="faq-question">${faq.pregunta}</button>
-      <div class="faq-answer"><p>${faq.respuesta}</p></div>
+      <button class="faq-question" aria-expanded="false">${escapeHtml(faq.pregunta)}</button>
+      <div class="faq-answer"><p>${escapeHtml(faq.respuesta)}</p></div>
     `;
     const btn = item.querySelector(".faq-question");
     btn.addEventListener("click", () => {
+      const estabaActivo = item.classList.contains("active");
       document.querySelectorAll(".faq-item").forEach(i => {
-        if (i !== item) i.classList.remove("active");
+        i.classList.remove("active");
+        const b = i.querySelector(".faq-question");
+        if (b) b.setAttribute("aria-expanded", "false");
       });
-      item.classList.toggle("active");
+      if (!estabaActivo) {
+        item.classList.add("active");
+        btn.setAttribute("aria-expanded", "true");
+      }
     });
     container.appendChild(item);
   });
+  actualizarSchemaFAQs(faqs);
 }
 
 // -------------------- ELEMENTOS --------------------
 const heroContainer = document.getElementById("hero-cards");
 const catalogoContainer = document.getElementById("catalogo-container");
 const catalogoGrid = document.getElementById("catalogo-grid");
+const catalogoTitulo = document.getElementById("catalogo-titulo");
 const productSlider = document.getElementById("product-slider");
 const searchInput = document.getElementById("search-input");
 const btnCatalogo = document.getElementById("btn-catalogo");
 const btnBuscar = document.getElementById("btn-buscar");
 
+// Estado activo de filtros del catálogo
+let categoriaActual = null;
+let busquedaActual = "";
+
 // -------------------- WHATSAPP --------------------
 function enviarWhatsApp(mensaje) {
   const cached = localStorage.getItem("tech_datos");
-  let numero = "50576112321";
+  let numero = DEFAULTS_DATOS.whatsapp;
   if (cached) {
-    const d = JSON.parse(cached);
-    if (d.whatsapp) numero = d.whatsapp;
+    try {
+      const d = JSON.parse(cached);
+      if (d.whatsapp) numero = String(d.whatsapp).replace(/\D/g, "");
+    } catch (e) {}
   }
   const url = `https://wa.me/${numero}?text=${encodeURIComponent(mensaje)}`;
-  window.open(url, "_blank");
-}
-
-function escribirAhora(nombreProducto) {
-  const mensaje = `\u00a1Hola! Estoy interesado en el producto: *${nombreProducto}*. \u00bfPodr\u00edas darme m\u00e1s informaci\u00f3n?`;
-  enviarWhatsApp(mensaje);
+  window.open(url, "_blank", "noopener,noreferrer");
 }
 
 // Función global para el botón de contacto general
 function contactar() {
-  const mensaje = "\u00a1Hola! Me gustar\u00eda obtener m\u00e1s informaci\u00f3n sobre sus productos.";
+  const mensaje = "¡Hola! Me gustaría obtener más información sobre sus productos.";
   enviarWhatsApp(mensaje);
 }
 
 // -------------------- HELPER IMAGEN --------------------
 function procesarUrlImagen(url) {
-  if (!url || url.trim() === '') return 'img/generico.png';
+  if (!url || url.trim() === "") return "img/generico.png";
   url = url.trim();
-  // Detectar links de Google Drive y convertir al formato de miniatura (thumbnail)
   const driveFileMatch = url.match(/drive\.google\.com\/file\/d\/([a-zA-Z0-9_-]+)/);
   const driveOpenMatch = url.match(/drive\.google\.com\/open\?id=([a-zA-Z0-9_-]+)/);
   const driveUcMatch = url.match(/drive\.google\.com\/uc\?.*[?&]id=([a-zA-Z0-9_-]+)/);
@@ -565,6 +705,26 @@ function procesarUrlImagen(url) {
   return url;
 }
 
+// -------------------- GESTIÓN DE MODALES --------------------
+function actualizarScrollBody() {
+  const hayModal = document.querySelector(".producto-overlay");
+  document.body.style.overflow = hayModal ? "hidden" : "auto";
+}
+
+function cerrarModalElemento(overlay) {
+  if (overlay) overlay.remove();
+  actualizarScrollBody();
+}
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
+    const overlays = document.querySelectorAll(".producto-overlay");
+    if (overlays.length > 0) {
+      cerrarModalElemento(overlays[overlays.length - 1]);
+    }
+  }
+});
+
 function agendarPedido(product) {
   const formOverlay = document.createElement("div");
   formOverlay.className = "producto-overlay";
@@ -572,22 +732,22 @@ function agendarPedido(product) {
   formOverlay.innerHTML = `
     <div class="producto-detalle-profesional" style="max-width: 400px; flex-direction: column; gap: 15px; text-align: left;">
       <h2 style="color: #003366; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">calendar_month</span> Agendar Pedido</h2>
-      <p style="text-align: center; margin-bottom: 10px; color: #555; width: 100%;">Estás agendando: <strong>${product.nombre}</strong></p>
+      <p style="text-align: center; margin-bottom: 10px; color: #555; width: 100%;">Estás agendando: <strong>${escapeHtml(product.nombre)}</strong></p>
       
       <div class="form-group">
-        <label>Nombre completo</label>
+        <label for="agenda-nombre">Nombre completo</label>
         <input type="text" id="agenda-nombre" placeholder="Ej. Juan Pérez">
       </div>
       <div class="form-group">
-        <label>Número de WhatsApp</label>
+        <label for="agenda-numero">Número de WhatsApp</label>
         <input type="tel" id="agenda-numero" placeholder="Ej. 8888-8888">
       </div>
       <div class="form-group">
-        <label>Ubicación</label>
+        <label for="agenda-ubicacion">Ubicación</label>
         <input type="text" id="agenda-ubicacion" placeholder="Ej. Managua, Linda Vista">
       </div>
       <div class="form-group">
-        <label>Horario</label>
+        <label for="agenda-horario">Horario</label>
         <input type="text" id="agenda-horario" placeholder="Ej. Por la mañana, 10 AM">
       </div>
 
@@ -599,6 +759,7 @@ function agendarPedido(product) {
   `;
 
   document.body.appendChild(formOverlay);
+  actualizarScrollBody();
 
   formOverlay.querySelector(".btn-enviar-agenda").onclick = () => {
     const nombre = document.getElementById("agenda-nombre").value.trim();
@@ -614,15 +775,15 @@ function agendarPedido(product) {
     const mensaje = `[NUEVO PEDIDO AGENDADO]\n\nProducto: ${product.nombre}\nPrecio: C$${product.precio}\n\nCliente: ${nombre}\nContacto: ${numero}\nUbicación: ${ubicacion}\nHorario: ${horario}`;
     enviarWhatsApp(mensaje);
 
-    formOverlay.remove();
+    cerrarModalElemento(formOverlay);
   };
 
   formOverlay.querySelector(".btn-cerrar-form").onclick = () => {
-    formOverlay.remove();
+    cerrarModalElemento(formOverlay);
   };
 
   formOverlay.addEventListener("click", (e) => {
-    if (e.target === formOverlay) formOverlay.remove();
+    if (e.target === formOverlay) cerrarModalElemento(formOverlay);
   });
 }
 
@@ -644,11 +805,11 @@ function comprarProducto(product) {
         <span class="material-symbols-outlined">account_balance</span> Pagar con Transferencia
       </h2>
       <p style="text-align: center; margin-bottom: 15px; color: #555; width: 100%; font-size: 14px;">
-        Estás comprando: <strong>${product.nombre}</strong> (C$${product.precio})
+        Estás comprando: <strong>${escapeHtml(product.nombre)}</strong> (C$${escapeHtml(product.precio)})
       </p>
 
       <div class="form-group">
-        <label>Selecciona tu banco:</label>
+        <label for="select-banco">Selecciona tu banco:</label>
         <select id="select-banco" style="padding: 10px; border-radius: 8px; border: 1px solid #ccc; font-size: 15px; outline: none;">
           <option value="" disabled selected>-- Elige un banco --</option>
           <option value="bac">BAC Credomatic</option>
@@ -662,7 +823,7 @@ function comprarProducto(product) {
       <div id="tutorial-pago" style="display: none; background: #eef7ff; padding: 15px; border-radius: 10px; border-left: 4px solid #00AEEF; margin-top: 10px;">
         <h3 style="margin-top:0; color:#003366; font-size: 16px;">Pasos para confirmar tu pago:</h3>
         <ol style="margin-bottom:0; padding-left:20px; color:#444; font-size: 14px; line-height: 1.6;">
-          <li>Transfiere la cantidad exacta de <strong>C$${product.precio}</strong> a nombre de: <strong>Yeltzin Jose Mendoza Ruiz</strong></li>
+          <li>Transfiere la cantidad exacta de <strong>C$${escapeHtml(product.precio)}</strong> a nombre de: <strong>Yeltzin Jose Mendoza Ruiz</strong></li>
           <li style="margin: 10px 0; font-size: 15px; color: #000;"><strong>Cuenta: <span id="cuenta-banco-texto"></span></strong></li>
           <li>Toma una captura de pantalla del recibo o transferencia exitosa.</li>
           <li>Haz clic en el botón de abajo para enviarnos tu comprobante por WhatsApp y terminar el pedido.</li>
@@ -677,6 +838,7 @@ function comprarProducto(product) {
   `;
 
   document.body.appendChild(formOverlay);
+  actualizarScrollBody();
 
   const selectBanco = formOverlay.querySelector("#select-banco");
   const tutorialPago = formOverlay.querySelector("#tutorial-pago");
@@ -696,15 +858,15 @@ function comprarProducto(product) {
     const banco = selectBanco.options[selectBanco.selectedIndex].text;
     const mensaje = `[PAGO POR TRANSFERENCIA]\n\nProducto: ${product.nombre}\nPrecio a pagar: C$${product.precio}\nBanco de transferencia: ${banco}\n\n[Adjunta aquí la captura de tu comprobante de pago para procesar el pedido]`;
     enviarWhatsApp(mensaje);
-    formOverlay.remove();
+    cerrarModalElemento(formOverlay);
   };
 
   formOverlay.querySelector(".btn-cerrar-compra").onclick = () => {
-    formOverlay.remove();
+    cerrarModalElemento(formOverlay);
   };
 
   formOverlay.addEventListener("click", (e) => {
-    if (e.target === formOverlay) formOverlay.remove();
+    if (e.target === formOverlay) cerrarModalElemento(formOverlay);
   });
 }
 
@@ -718,14 +880,14 @@ function mostrarProducto(product) {
   overlay.innerHTML = `
     <div class="producto-detalle-profesional">
       <div class="detalle-imagen">
-        <img src="${product.imagen || 'img/generico.png'}" style="aspect-ratio:1/1; object-fit:cover; width:100%; max-width:350px; border-radius:15px; border: 1px solid #eee; background: white;">
+        <img src="${escapeHtml(product.imagen || 'img/generico.png')}" alt="${escapeHtml(product.nombre)}" style="aspect-ratio:1/1; object-fit:cover; width:100%; max-width:350px; border-radius:15px; border: 1px solid #eee; background: white;">
       </div>
 
       <div class="detalle-info">
-        <h2 class="detalle-titulo">${product.nombre}</h2>
-        <div class="detalle-categoria"><span>Categoría:</span> ${product.categoria}</div>
-        <p class="detalle-desc">${product.descripcion}</p>
-        <div class="detalle-precio">C$${product.precio}</div>
+        <h2 class="detalle-titulo">${escapeHtml(product.nombre)}</h2>
+        <div class="detalle-categoria"><span>Categoría:</span> ${escapeHtml(product.categoria)}</div>
+        <p class="detalle-desc">${escapeHtml(product.descripcion)}</p>
+        <div class="detalle-precio">C$${escapeHtml(product.precio)}</div>
 
         <div class="detalle-acciones">
           <button class="btn-agendar producto-btn btn-amarillo"><span class="material-symbols-outlined">calendar_month</span> Agendar Pedido</button>
@@ -738,21 +900,20 @@ function mostrarProducto(product) {
   `;
 
   document.body.appendChild(overlay);
-  document.body.style.overflow = "hidden";
+  actualizarScrollBody();
 
   overlay.querySelector(".btn-agendar").onclick = () => agendarPedido(product);
   overlay.querySelector(".btn-comprar").onclick = () => comprarProducto(product);
-  overlay.querySelector(".btn-cerrar").onclick = cerrarDetalle;
+  overlay.querySelector(".btn-cerrar").onclick = () => cerrarModalElemento(overlay);
 
   overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) cerrarDetalle();
+    if (e.target === overlay) cerrarModalElemento(overlay);
   });
 }
 
 function cerrarDetalle() {
   const overlay = document.querySelector(".producto-overlay");
-  if (overlay) overlay.remove();
-  document.body.style.overflow = "auto";
+  cerrarModalElemento(overlay);
 }
 
 // -------------------- IMÁGENES POR CATEGORÍA --------------------
@@ -763,7 +924,6 @@ const IMAGENES_CATEGORIAS = {
   "Auriculares para la Escucha": "img/prod_intrauditivo-individual-z-360bt.jpg",
   "Bancos de Carga": "img/prod_powerbank-de-50-mil-map-con-panel-y-carga-corriente.jpg",
   "Teclados": "img/prod_mini-teclado-bluetooth-recargable.jpg",
-  "Motorizados": "img/prod_holder-ara-a-anti-vibraci-n-de-manubrio.jpg",
   "Motorizados": "img/prod_ejeas-v6-pro.jpg",
   "Smartwatch": "img/prod_smartwatch-i90-suit-extreme.jpg",
   "Cargadores Xiaomi Turbo Charger": "img/prod_cargador-de-33w.jpg",
@@ -782,15 +942,23 @@ async function cargarCategorias() {
     categories.forEach(categoria => {
       const card = document.createElement("div");
       card.className = "hero-card";
+      card.setAttribute("role", "listitem");
+      card.setAttribute("tabindex", "0");
 
       const imgSrc = IMAGENES_CATEGORIAS[categoria] || "img/generico.png";
 
       card.innerHTML = `
-        <img src="${imgSrc}" style="aspect-ratio: 1/1; object-fit: cover; width: 100%; border-radius: 10px 10px 0 0;">
-        <h3>${categoria}</h3>
+        <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(categoria)} - Tech Store Nicaragua" loading="lazy" style="aspect-ratio: 1/1; object-fit: cover; width: 100%; border-radius: 10px 10px 0 0;">
+        <h3>${escapeHtml(categoria)}</h3>
       `;
 
-      card.onclick = () => cargarCatalogo(categoria);
+      card.onclick = () => cargarCatalogo(categoria, "");
+      card.onkeydown = (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          cargarCatalogo(categoria, "");
+        }
+      };
       heroContainer.appendChild(card);
     });
 
@@ -800,9 +968,9 @@ async function cargarCategorias() {
 }
 
 // -------------------- PRODUCTOS --------------------
-async function cargarProductos() {
+async function cargarProductos(forzarRecarga = false) {
   try {
-    const products = await obtenerProductos();
+    const products = await obtenerProductos(forzarRecarga);
 
     productSlider.innerHTML = "";
 
@@ -816,12 +984,12 @@ async function cargarProductos() {
       card.setAttribute("itemtype", "https://schema.org/Product");
 
       card.innerHTML = `
-        <img src="${product.imagen || 'img/generico.png'}" alt="${product.nombre} - ${product.categoria} en Nicaragua" loading="lazy" style="aspect-ratio:1/1; object-fit:cover; width:100%; border-radius:15px; border: 1px solid #eee; background: white;" itemprop="image">
-        <h3 itemprop="name">${product.nombre}</h3>
-        <p class="categoria" itemprop="category">${product.categoria}</p>
-        <p class="descripcion" itemprop="description">${product.descripcion}</p>
+        <img src="${escapeHtml(product.imagen || 'img/generico.png')}" alt="${escapeHtml(product.nombre)} - ${escapeHtml(product.categoria)} en Nicaragua" loading="lazy" style="aspect-ratio:1/1; object-fit:cover; width:100%; border-radius:15px; border: 1px solid #eee; background: white;" itemprop="image">
+        <h3 itemprop="name">${escapeHtml(product.nombre)}</h3>
+        <p class="categoria" itemprop="category">${escapeHtml(product.categoria)}</p>
+        <p class="descripcion" itemprop="description">${escapeHtml(product.descripcion)}</p>
         <p class="precio" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
-          <span itemprop="price" content="${product.precio}">C$${product.precio}</span>
+          <span itemprop="price" content="${escapeHtml(product.precio)}">C$${escapeHtml(product.precio)}</span>
           <meta itemprop="priceCurrency" content="NIO">
           <meta itemprop="availability" content="https://schema.org/InStock">
         </p>
@@ -831,7 +999,6 @@ async function cargarProductos() {
       productSlider.appendChild(card);
     });
 
-    // Inyectar schema.org ItemList de productos destacados
     inyectarSchemaProductosDestacados(featuredProducts);
 
   } catch (err) {
@@ -840,7 +1007,7 @@ async function cargarProductos() {
 }
 
 function inyectarSchemaProductosDestacados(products) {
-  const existing = document.getElementById('schema-productos-destacados');
+  const existing = document.getElementById("schema-productos-destacados");
   if (existing) existing.remove();
 
   const schema = {
@@ -854,7 +1021,9 @@ function inyectarSchemaProductosDestacados(products) {
         "@type": "Product",
         "name": p.nombre,
         "description": p.descripcion,
-        "image": p.imagen ? `https://techstore-nicaragua.com/${p.imagen}` : undefined,
+        "image": p.imagen
+          ? (p.imagen.startsWith("http") ? p.imagen : `https://techstore-nicaragua.com/${p.imagen}`)
+          : undefined,
         "category": p.categoria,
         "offers": {
           "@type": "Offer",
@@ -867,13 +1036,12 @@ function inyectarSchemaProductosDestacados(products) {
     }))
   };
 
-  const script = document.createElement('script');
-  script.type = 'application/ld+json';
-  script.id = 'schema-productos-destacados';
+  const script = document.createElement("script");
+  script.type = "application/ld+json";
+  script.id = "schema-productos-destacados";
   script.textContent = JSON.stringify(schema);
   document.head.appendChild(script);
 }
-
 
 // -------------------- BUSCADOR --------------------
 function ejecutarBusqueda() {
@@ -881,21 +1049,17 @@ function ejecutarBusqueda() {
   cargarCatalogo(null, query);
 }
 
-// Mostrar input / buscar
 if (btnBuscar && searchInput) {
   btnBuscar.addEventListener("click", () => {
-
     if (!searchInput.classList.contains("activo")) {
       searchInput.classList.add("activo");
       searchInput.focus();
     } else {
       ejecutarBusqueda();
     }
-
   });
 }
 
-// ENTER
 if (searchInput) {
   searchInput.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
@@ -906,60 +1070,80 @@ if (searchInput) {
 }
 
 // -------------------- CATÁLOGO --------------------
-async function cargarCatalogo(categoria = null, buscar = "") {
+async function cargarCatalogo(categoria = undefined, buscar = undefined) {
   try {
+    if (categoria !== undefined) categoriaActual = categoria;
+    if (buscar !== undefined) busquedaActual = buscar;
+
     const products = await obtenerProductos();
 
     catalogoGrid.innerHTML = "";
 
     let filtrados = products;
 
-    if (categoria) {
-      filtrados = filtrados.filter(p => p.categoria === categoria);
+    if (categoriaActual) {
+      filtrados = filtrados.filter(p => p.categoria === categoriaActual);
     }
 
-    if (buscar) {
+    if (busquedaActual) {
+      const q = normalizarTexto(busquedaActual);
       filtrados = filtrados.filter(p =>
-        p.nombre.toLowerCase().includes(buscar.toLowerCase())
+        normalizarTexto(p.nombre).includes(q) ||
+        normalizarTexto(p.categoria).includes(q) ||
+        normalizarTexto(p.descripcion).includes(q)
       );
     }
 
+    // Actualizar título del catálogo según el filtro activo
+    if (catalogoTitulo) {
+      if (categoriaActual) {
+        catalogoTitulo.textContent = `Catálogo: ${categoriaActual}`;
+      } else if (busquedaActual) {
+        catalogoTitulo.textContent = `Resultados para "${busquedaActual}"`;
+      } else {
+        catalogoTitulo.textContent = "Catálogo Completo";
+      }
+    }
+
     // Filtro de precio
-    const precioMinInput = document.getElementById('filtro-precio-min');
-    const precioMaxInput = document.getElementById('filtro-precio-max');
-    const precioMin = precioMinInput && precioMinInput.value !== '' ? parseFloat(precioMinInput.value) : 0;
-    const precioMax = precioMaxInput && precioMaxInput.value !== '' ? parseFloat(precioMaxInput.value) : Infinity;
+    const precioMinInput = document.getElementById("filtro-precio-min");
+    const precioMaxInput = document.getElementById("filtro-precio-max");
+    const precioMin = precioMinInput && precioMinInput.value !== "" ? parseFloat(precioMinInput.value) : 0;
+    const precioMax = precioMaxInput && precioMaxInput.value !== "" ? parseFloat(precioMaxInput.value) : Infinity;
     if (precioMin > 0 || precioMax < Infinity) {
       filtrados = filtrados.filter(p => p.precio >= precioMin && p.precio <= precioMax);
     }
 
-    filtrados.forEach(product => {
-      const card = document.createElement("div");
-      card.className = "card";
-      card.setAttribute("role", "listitem");
-      card.setAttribute("itemscope", "");
-      card.setAttribute("itemtype", "https://schema.org/Product");
+    if (filtrados.length === 0) {
+      catalogoGrid.innerHTML = `<p style="color:#666; font-size:16px; padding: 2rem; text-align:center; width:100%;">No se encontraron productos con estos filtros.</p>`;
+    } else {
+      filtrados.forEach(product => {
+        const card = document.createElement("div");
+        card.className = "card";
+        card.setAttribute("role", "listitem");
+        card.setAttribute("itemscope", "");
+        card.setAttribute("itemtype", "https://schema.org/Product");
 
-      card.innerHTML = `
-        <img src="${product.imagen || 'img/generico.png'}" alt="${product.nombre} - ${product.categoria} en Nicaragua | Tech Store Nicaragua" loading="lazy" style="aspect-ratio: 1/1; object-fit: cover; width: 100%; border-radius: 8px;" itemprop="image">
-        <h3 itemprop="name">${product.nombre}</h3>
-        <p class="categoria" itemprop="category">${product.categoria}</p>
-        <p class="descripcion" itemprop="description">${product.descripcion}</p>
-        <p class="precio" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
-          <span itemprop="price" content="${product.precio}">C$${product.precio}</span>
-          <meta itemprop="priceCurrency" content="NIO">
-          <meta itemprop="availability" content="https://schema.org/InStock">
-        </p>
-      `;
+        card.innerHTML = `
+          <img src="${escapeHtml(product.imagen || 'img/generico.png')}" alt="${escapeHtml(product.nombre)} - ${escapeHtml(product.categoria)} en Nicaragua | Tech Store Nicaragua" loading="lazy" style="aspect-ratio: 1/1; object-fit: cover; width: 100%; border-radius: 8px;" itemprop="image">
+          <h3 itemprop="name">${escapeHtml(product.nombre)}</h3>
+          <p class="categoria" itemprop="category">${escapeHtml(product.categoria)}</p>
+          <p class="descripcion" itemprop="description">${escapeHtml(product.descripcion)}</p>
+          <p class="precio" itemprop="offers" itemscope itemtype="https://schema.org/Offer">
+            <span itemprop="price" content="${escapeHtml(product.precio)}">C$${escapeHtml(product.precio)}</span>
+            <meta itemprop="priceCurrency" content="NIO">
+            <meta itemprop="availability" content="https://schema.org/InStock">
+          </p>
+        `;
 
-      card.onclick = () => mostrarProducto(product);
-      catalogoGrid.appendChild(card);
-    });
+        card.onclick = () => mostrarProducto(product);
+        catalogoGrid.appendChild(card);
+      });
+    }
 
     catalogoContainer.style.display = "block";
     productSlider.parentElement.style.display = "none";
 
-    // Scroll automático hacia el contenedor del catálogo
     catalogoContainer.scrollIntoView({ behavior: "smooth", block: "start" });
 
   } catch (err) {
@@ -969,7 +1153,10 @@ async function cargarCatalogo(categoria = null, buscar = "") {
 
 // -------------------- BOTÓN CATÁLOGO --------------------
 if (btnCatalogo) {
-  btnCatalogo.onclick = () => cargarCatalogo();
+  btnCatalogo.onclick = () => {
+    if (searchInput) searchInput.value = "";
+    cargarCatalogo(null, "");
+  };
 }
 
 // -------------------- FILTRO DE PRECIO --------------------
@@ -980,198 +1167,37 @@ if (btnAplicarPrecio) {
 }
 if (btnLimpiarPrecio) {
   btnLimpiarPrecio.onclick = () => {
-    const minInput = document.getElementById('filtro-precio-min');
-    const maxInput = document.getElementById('filtro-precio-max');
-    if (minInput) minInput.value = '';
-    if (maxInput) maxInput.value = '';
+    const minInput = document.getElementById("filtro-precio-min");
+    const maxInput = document.getElementById("filtro-precio-max");
+    if (minInput) minInput.value = "";
+    if (maxInput) maxInput.value = "";
     cargarCatalogo();
   };
 }
 
 // -------------------- INIT --------------------
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  await sincronizarConfigRemota();
   aplicarDatosGenerales();
   cargarRedes();
   cargarFAQs();
   if (heroContainer) cargarCategorias();
   if (productSlider) cargarProductos();
+
+  // Soporte para parámetros URL (?buscar=... y ?catalogo=true) declarados en Schema.org y PWA Manifest
+  const params = new URLSearchParams(window.location.search);
+  const queryBuscar = params.get("buscar");
+  const abrirCatalogo = params.get("catalogo");
+  if (queryBuscar) {
+    if (searchInput) {
+      searchInput.classList.add("activo");
+      searchInput.value = queryBuscar;
+    }
+    cargarCatalogo(null, queryBuscar);
+  } else if (abrirCatalogo === "true") {
+    cargarCatalogo(null, "");
+  }
 });
-
-
-// -------------------- FAQ --------------------
-// (El event listener de las FAQs ahora se inicializa dentro de cargarFAQs() de manera dinámica)
-
-// -------------------- ESTILOS --------------------
-const style = document.createElement("style");
-style.textContent = `
-.producto-overlay {
-  position: fixed;
-  top:0;
-  left:0;
-  width:100%;
-  height:100%;
-  background: rgba(0,0,0,0.6);
-  backdrop-filter: blur(5px);
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  z-index:9999;
-}
-.producto-detalle-profesional {
-  background:#fff;
-  border-radius:20px;
-  max-width:950px;
-  width:90%;
-  max-height: 90vh;
-  overflow-y: auto;
-  display:flex;
-  flex-wrap:wrap;
-  gap:40px;
-  padding:40px;
-  box-shadow: 0 15px 40px rgba(0,0,0,0.3);
-  position: relative;
-  align-items: center;
-}
-.detalle-imagen {
-  flex: 1;
-  min-width: 250px;
-  display: flex;
-  justify-content: center;
-}
-.detalle-imagen img {
-  width:100%;
-  max-width: 350px;
-  border-radius:15px;
-  object-fit: cover;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-.detalle-info {
-  flex: 1.5;
-  min-width: 300px;
-  display: flex;
-  flex-direction: column;
-}
-.detalle-titulo {
-  font-size: 32px;
-  color: #003366;
-  margin: 0 0 15px 0;
-  line-height:1.2;
-}
-.detalle-categoria {
-  background: #eef7ff;
-  color: #00AEEF;
-  padding: 6px 14px;
-  border-radius: 20px;
-  font-size: 14px;
-  font-weight: bold;
-  display: inline-block;
-  align-self: flex-start;
-  margin-bottom: 20px;
-}
-.detalle-categoria span {
-  color: #555;
-  font-weight: normal;
-}
-.detalle-desc {
-  font-size: 17px;
-  color: #444;
-  line-height: 1.6;
-  margin-bottom: 25px;
-}
-.detalle-precio {
-  font-size: 36px;
-  font-weight: 900;
-  color: #28a745;
-  margin-bottom: 30px;
-}
-.detalle-acciones {
-  display: flex;
-  gap: 15px;
-  margin-bottom: 20px;
-  width: 100%;
-}
-.producto-btn {
-  background:#00AEEF;
-  color:#fff;
-  border:none;
-  padding:15px 25px;
-  font-weight: bold;
-  font-size: 16px;
-  border-radius:10px;
-  cursor:pointer;
-  flex: 1;
-  text-align: center;
-  transition: all 0.3s;
-}
-.producto-btn:hover {
-  transform: translateY(-2px);
-  filter: brightness(1.1);
-}
-.btn-amarillo { background: #ffc107; color: #000; }
-.btn-verde { background: #28a745; }
-.volver-btn {
-  margin-top:10px;
-  background:#555;
-  color:white;
-  border:none;
-  padding:12px 20px;
-  border-radius:10px;
-  cursor:pointer;
-  transition: 0.3s;
-}
-.btn-outline {
-  background: transparent;
-  color: #555;
-  border: 1px solid #ccc;
-  align-self: flex-start;
-  font-weight: bold;
-}
-.btn-outline:hover {
-  background: #eee;
-  color: #000;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  width: 100%;
-}
-.form-group label {
-  font-weight: bold;
-  color: #003366;
-  font-size: 14px;
-}
-.form-group input {
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  font-size: 15px;
-  outline: none;
-  transition: border-color 0.3s;
-}
-.form-group input:focus {
-  border-color: #00AEEF;
-}
-.producto-detalle-profesional::-webkit-scrollbar,
-.custom-scroll-container::-webkit-scrollbar {
-  width: 6px;
-}
-.producto-detalle-profesional::-webkit-scrollbar-track,
-.custom-scroll-container::-webkit-scrollbar-track {
-  background: transparent;
-}
-.producto-detalle-profesional::-webkit-scrollbar-thumb,
-.custom-scroll-container::-webkit-scrollbar-thumb {
-  background: #ccc;
-  border-radius: 10px;
-}
-.producto-detalle-profesional::-webkit-scrollbar-thumb:hover,
-.custom-scroll-container::-webkit-scrollbar-thumb:hover {
-  background: #999;
-}
-`;
-document.head.appendChild(style);
 
 /* -------------------- ADMIN LOGIC -------------------- */
 const btnAdmin = document.getElementById("btn-admin");
@@ -1183,42 +1209,37 @@ const btnEditarProd = document.getElementById("btn-editar-producto");
 const btnRecargarCache = document.getElementById("btn-recargar-cache");
 
 if (btnRecargarCache) {
-  btnRecargarCache.innerHTML = `<span class="material-symbols-outlined">sync</span> Subir al Excel`;
-  btnRecargarCache.title = "Subir los productos iniciales al Excel (Hazlo solo una vez)";
-  btnRecargarCache.style.background = "#fd7e14";
-  
   btnRecargarCache.onclick = () => {
     if (confirm("¿Sincronizar todos los productos locales hacia el Excel? Haz esto solo si tu Excel está vacío.")) {
       btnRecargarCache.innerHTML = `<span class="material-symbols-outlined">sync</span> Sincronizando...`;
       btnRecargarCache.disabled = true;
       (async () => {
-        let products = JSON.parse(JSON.stringify(PRODUCTOS_BD));
-        for (let p of products) {
-          try {
-            await fetch(GOOGLE_SHEETS_API, {
-              method: 'POST',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({ action: "add", nombre: p.nombre, categoria: p.categoria, precio: p.precio, descripcion: p.descripcion, imagen: p.imagen })
-            });
-          } catch(e) {}
+        try {
+          const products = JSON.parse(JSON.stringify(PRODUCTOS_BD));
+          await enviarPostAdmin({ action: "sync_all", products });
+          localStorage.removeItem("tech_productos_v2");
+          alert("Sincronización completa. Se recargará el catálogo.");
+          location.reload();
+        } catch (err) {
+          alert("Error al sincronizar: " + err.message);
+          btnRecargarCache.innerHTML = `<span class="material-symbols-outlined">sync</span> Subir al Excel`;
+          btnRecargarCache.disabled = false;
         }
-        alert("Sincronización completa. Por favor recarga la página.");
-        location.reload();
       })();
     }
   };
 }
 
 function checkAdmin() {
-  const esAdmin = sessionStorage.getItem("isAdmin") === "true";
+  const esAdmin = sessionStorage.getItem("isAdmin") === "true" && Boolean(sessionStorage.getItem("adminPass"));
   if (esAdmin) {
     if (btnAdmin) btnAdmin.style.display = "none";
-    if (btnCerrarSesion) btnCerrarSesion.style.display = "inline-block";
-    if (btnAgregar) btnAgregar.style.display = "inline-block";
-    if (btnEliminar) btnEliminar.style.display = "inline-block";
-    if (btnEditarData) btnEditarData.style.display = "inline-block";
-    if (btnEditarProd) btnEditarProd.style.display = "inline-block";
-    if (btnRecargarCache) btnRecargarCache.style.display = "inline-block";
+    if (btnCerrarSesion) btnCerrarSesion.style.display = "inline-flex";
+    if (btnAgregar) btnAgregar.style.display = "inline-flex";
+    if (btnEliminar) btnEliminar.style.display = "inline-flex";
+    if (btnEditarData) btnEditarData.style.display = "inline-flex";
+    if (btnEditarProd) btnEditarProd.style.display = "inline-flex";
+    if (btnRecargarCache) btnRecargarCache.style.display = "inline-flex";
   } else {
     if (btnAdmin) btnAdmin.style.display = "";
     if (btnCerrarSesion) btnCerrarSesion.style.display = "none";
@@ -1233,14 +1254,15 @@ checkAdmin();
 
 if (btnCerrarSesion) {
   btnCerrarSesion.onclick = () => {
-    if (confirm("\u00bfDeseas cerrar la sesi\u00f3n de administrador?")) {
+    if (confirm("¿Deseas cerrar la sesión de administrador?")) {
       sessionStorage.removeItem("isAdmin");
+      sessionStorage.removeItem("adminUser");
+      sessionStorage.removeItem("adminPass");
       checkAdmin();
-      alert("Sesi\u00f3n de administrador cerrada.");
+      alert("Sesión de administrador cerrada.");
     }
   };
 }
-
 
 if (btnAdmin) {
   btnAdmin.onclick = () => {
@@ -1249,37 +1271,65 @@ if (btnAdmin) {
     formOverlay.innerHTML = `
       <div class="producto-detalle-profesional" style="max-width: 350px; flex-direction: column; gap: 15px;">
         <h2 style="color: #003366; text-align: center;">Acceso Admin</h2>
-        <div class="form-group"><label>Usuario</label><input type="text" id="admin-user"></div>
-        <div class="form-group"><label>Contraseña</label><input type="password" id="admin-pass"></div>
-        <div style="display:flex; justify-content:space-between; margin-top:10px;">
+        <div class="form-group"><label for="admin-user">Usuario</label><input type="text" id="admin-user" autocomplete="username"></div>
+        <div class="form-group"><label for="admin-pass">Contraseña</label><input type="password" id="admin-pass" autocomplete="current-password"></div>
+        <div style="display:flex; justify-content:space-between; margin-top:10px; width:100%; gap:10px;">
           <button class="btn-cancel-admin volver-btn" style="margin-top:0;">Cerrar</button>
           <button class="btn-login-admin producto-btn" style="margin-top:0; background:#003366;">Ingresar</button>
         </div>
       </div>
     `;
     document.body.appendChild(formOverlay);
+    actualizarScrollBody();
 
-    formOverlay.querySelector(".btn-login-admin").onclick = () => {
-      const u = document.getElementById("admin-user").value;
+    const btnLogin = formOverlay.querySelector(".btn-login-admin");
+    btnLogin.onclick = async () => {
+      const u = document.getElementById("admin-user").value.trim();
       const p = document.getElementById("admin-pass").value;
-      if (u === "YeltsinTechStore" && p === "A1B2C3D4") {
-        sessionStorage.setItem("isAdmin", "true");
-        checkAdmin();
-        alert("¡Bienvenido Administrador!");
-        formOverlay.remove();
-      } else {
-        alert("Credenciales incorrectas.");
+      if (!u || !p) return alert("Ingresa tu usuario y contraseña.");
+
+      btnLogin.textContent = "Verificando...";
+      btnLogin.disabled = true;
+
+      try {
+        const res = await fetch(GOOGLE_SHEETS_API, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify({ action: "login", user: u, pass: p })
+        });
+        const data = await res.json();
+
+        if (data.status === "success") {
+          sessionStorage.setItem("isAdmin", "true");
+          sessionStorage.setItem("adminUser", u);
+          sessionStorage.setItem("adminPass", p);
+          checkAdmin();
+          alert("¡Bienvenido Administrador!");
+          cerrarModalElemento(formOverlay);
+        } else if (data.message === "Acción no válida") {
+          alert("Aviso: Debes actualizar el código de Google Apps Script (Nueva implementación) para activar el inicio de sesión seguro.");
+          btnLogin.textContent = "Ingresar";
+          btnLogin.disabled = false;
+        } else {
+          alert(data.message || "Credenciales incorrectas.");
+          btnLogin.textContent = "Ingresar";
+          btnLogin.disabled = false;
+        }
+      } catch (err) {
+        alert("Error al conectar con el servidor: " + err.message);
+        btnLogin.textContent = "Ingresar";
+        btnLogin.disabled = false;
       }
     };
-    formOverlay.querySelector(".btn-cancel-admin").onclick = () => formOverlay.remove();
+    formOverlay.querySelector(".btn-cancel-admin").onclick = () => cerrarModalElemento(formOverlay);
   };
 }
 
 if (btnAgregar) {
   btnAgregar.onclick = () => {
     const catBtnsHtml = CATEGORIAS_BD.map(cat =>
-      `<button type="button" class="cat-btn" data-cat="${cat}">${cat}</button>`
-    ).join('');
+      `<button type="button" class="cat-btn" data-cat="${escapeHtml(cat)}">${escapeHtml(cat)}</button>`
+    ).join("");
 
     const formOverlay = document.createElement("div");
     formOverlay.className = "producto-overlay";
@@ -1287,7 +1337,7 @@ if (btnAgregar) {
       <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left;">
         <h2 style="color: #28a745; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">add_circle</span> Agregar Producto</h2>
 
-        <div class="form-group"><label>Nombre</label><input type="text" id="add-nombre"></div>
+        <div class="form-group"><label for="add-nombre">Nombre</label><input type="text" id="add-nombre"></div>
 
         <div class="form-group">
           <label>Categoría &nbsp;<span id="add-cat-label" style="color:#00AEEF; font-size:13px;"></span></label>
@@ -1295,11 +1345,11 @@ if (btnAgregar) {
           <div class="cat-picker">${catBtnsHtml}</div>
         </div>
 
-        <div class="form-group"><label>Precio (C$)</label><input type="number" id="add-precio" min="0"></div>
-        <div class="form-group"><label>Descripción</label><input type="text" id="add-descripcion"></div>
+        <div class="form-group"><label for="add-precio">Precio (C$)</label><input type="number" id="add-precio" min="0"></div>
+        <div class="form-group"><label for="add-descripcion">Descripción</label><input type="text" id="add-descripcion"></div>
 
         <div class="form-group">
-          <label>Imagen — URL o link de Google Drive</label>
+          <label for="add-imagen">Imagen — URL o link de Google Drive</label>
           <input type="text" id="add-imagen" placeholder="https://... o link de compartir de Drive">
           <small style="color:#888; margin-top:4px; display:block;">Los links de Google Drive se convierten automáticamente.</small>
         </div>
@@ -1311,14 +1361,14 @@ if (btnAgregar) {
       </div>
     `;
     document.body.appendChild(formOverlay);
+    actualizarScrollBody();
 
-    // Selector de categorías
-    formOverlay.querySelectorAll('.cat-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        formOverlay.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('cat-btn-active'));
-        btn.classList.add('cat-btn-active');
-        document.getElementById('add-categoria').value = btn.dataset.cat;
-        document.getElementById('add-cat-label').textContent = '✓ ' + btn.dataset.cat;
+    formOverlay.querySelectorAll(".cat-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        formOverlay.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("cat-btn-active"));
+        btn.classList.add("cat-btn-active");
+        document.getElementById("add-categoria").value = btn.dataset.cat;
+        document.getElementById("add-cat-label").textContent = "✓ " + btn.dataset.cat;
       });
     });
 
@@ -1336,30 +1386,27 @@ if (btnAgregar) {
       btnGuardar.disabled = true;
 
       try {
-        await fetch(GOOGLE_SHEETS_API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({
-            action: "add",
-            nombre: pNombre,
-            categoria: pCat,
-            precio: parseFloat(pPrecio),
-            descripcion: pDesc,
-            imagen: pImagen || 'img/generico.png'
-          })
+        await enviarPostAdmin({
+          action: "add",
+          nombre: pNombre,
+          categoria: pCat,
+          precio: parseFloat(pPrecio),
+          descripcion: pDesc,
+          imagen: pImagen || "img/generico.png"
         });
+        localStorage.removeItem("tech_productos_v2");
         alert("Producto agregado en Google Sheets.");
-        formOverlay.remove();
-        cargarProductos();
+        cerrarModalElemento(formOverlay);
+        await cargarProductos(true);
         if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
-      } catch(e) {
-        alert("Error guardando en Sheets");
+      } catch (e) {
+        alert("Error guardando en Sheets: " + e.message);
         btnGuardar.textContent = "Agregar";
         btnGuardar.disabled = false;
       }
     };
 
-    formOverlay.querySelector(".btn-cancel-add").onclick = () => formOverlay.remove();
+    formOverlay.querySelector(".btn-cancel-add").onclick = () => cerrarModalElemento(formOverlay);
   };
 }
 
@@ -1370,15 +1417,15 @@ if (btnEliminar) {
     const formOverlay = document.createElement("div");
     formOverlay.className = "producto-overlay";
 
-    let prodConIndex = productos.map((p, i) => Object.assign({}, p, { _oIdx: i }));
+    const prodConIndex = productos.map((p, i) => Object.assign({}, p, { _oIdx: i }));
     prodConIndex.sort((a, b) => {
       if (a.categoria === b.categoria) return a.nombre.localeCompare(b.nombre);
       return a.categoria.localeCompare(b.categoria);
     });
 
-    let htmlList = prodConIndex.map(p => `
+    const htmlList = prodConIndex.map(p => `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eaeaea; padding:12px 15px; background: #fdfdfd; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-        <span style="color:#333;"><small style="color:#888;">${p.categoria}</small><br><strong>${p.nombre}</strong> <br> <small style="color:#00AEEF; font-weight:bold;">C$${p.precio}</small></span>
+        <span style="color:#333;"><small style="color:#888;">${escapeHtml(p.categoria)}</small><br><strong>${escapeHtml(p.nombre)}</strong> <br> <small style="color:#00AEEF; font-weight:bold;">C$${escapeHtml(p.precio)}</small></span>
         <button onclick="borrarProd(${p._oIdx})" style="background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; padding:8px 12px; transition:0.3s; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1"><span class="material-symbols-outlined" style="font-size:18px;">delete</span></button>
       </div>
     `).join("");
@@ -1391,28 +1438,26 @@ if (btnEliminar) {
       </div>
     `;
     document.body.appendChild(formOverlay);
+    actualizarScrollBody();
 
     window.borrarProd = async (idx) => {
       if (!confirm("¿Seguro que deseas borrar este producto permanentemente de Google Sheets?")) return;
       const borrado = productos[idx];
 
       try {
-        await fetch(GOOGLE_SHEETS_API, {
-          method: 'POST',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: "delete", nombre: borrado.nombre })
-        });
+        await enviarPostAdmin({ action: "delete", nombre: borrado.nombre });
+        localStorage.removeItem("tech_productos_v2");
         alert("Producto eliminado de Google Sheets.");
-        formOverlay.remove();
-        cargarProductos();
+        cerrarModalElemento(formOverlay);
+        await cargarProductos(true);
         if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
-        btnEliminar.click(); 
-      } catch(e) {
-        alert("Error al borrar en Sheets.");
+        btnEliminar.click();
+      } catch (e) {
+        alert("Error al borrar en Sheets: " + e.message);
       }
     };
 
-    formOverlay.querySelector(".btn-cancel-del").onclick = () => formOverlay.remove();
+    formOverlay.querySelector(".btn-cancel-del").onclick = () => cerrarModalElemento(formOverlay);
   };
 }
 
@@ -1437,11 +1482,12 @@ async function abrirMenuEditarDatos() {
     </div>
   `;
   document.body.appendChild(formOverlay);
+  actualizarScrollBody();
 
-  formOverlay.querySelector(".btn-cancel-menu").onclick = () => formOverlay.remove();
-  formOverlay.querySelector(".btn-menu-info").onclick = () => { formOverlay.remove(); abrirEditorInfo(); };
-  formOverlay.querySelector(".btn-menu-redes").onclick = () => { formOverlay.remove(); abrirEditorRedes(); };
-  formOverlay.querySelector(".btn-menu-faqs").onclick = () => { formOverlay.remove(); abrirEditorFAQs(); };
+  formOverlay.querySelector(".btn-cancel-menu").onclick = () => cerrarModalElemento(formOverlay);
+  formOverlay.querySelector(".btn-menu-info").onclick = () => { cerrarModalElemento(formOverlay); abrirEditorInfo(); };
+  formOverlay.querySelector(".btn-menu-redes").onclick = () => { cerrarModalElemento(formOverlay); abrirEditorRedes(); };
+  formOverlay.querySelector(".btn-menu-faqs").onclick = () => { cerrarModalElemento(formOverlay); abrirEditorFAQs(); };
 }
 
 async function abrirEditorInfo() {
@@ -1452,9 +1498,9 @@ async function abrirEditorInfo() {
     <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
       <h2 style="color: #17a2b8; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">storefront</span> Información del Negocio</h2>
       
-      <div class="form-group"><label>Nombre del Negocio</label><input type="text" id="edit-nombre" value="${datos.nombre}"></div>
-      <div class="form-group"><label>Ubicación</label><input type="text" id="edit-ubicacion" value="${datos.ubicacion}"></div>
-      <div class="form-group"><label>WhatsApp Pedidos (solo números)</label><input type="text" id="edit-wa" value="${datos.whatsapp}"></div>
+      <div class="form-group"><label for="edit-nombre">Nombre del Negocio</label><input type="text" id="edit-nombre" value="${escapeHtml(datos.nombre)}"></div>
+      <div class="form-group"><label for="edit-ubicacion">Ubicación</label><input type="text" id="edit-ubicacion" value="${escapeHtml(datos.ubicacion)}"></div>
+      <div class="form-group"><label for="edit-wa">WhatsApp Pedidos (solo números)</label><input type="text" id="edit-wa" value="${escapeHtml(datos.whatsapp)}"></div>
       <small style="color:#888; font-size:12px;">Nota: Las URLs de redes sociales ahora se gestionan en su propia sección.</small>
 
       <div style="display: flex; justify-content: space-between; margin-top: 15px; width: 100%;">
@@ -1464,10 +1510,11 @@ async function abrirEditorInfo() {
     </div>
   `;
   document.body.appendChild(formOverlay);
+  actualizarScrollBody();
 
-  formOverlay.querySelector(".btn-regresar").onclick = () => { formOverlay.remove(); abrirMenuEditarDatos(); };
+  formOverlay.querySelector(".btn-regresar").onclick = () => { cerrarModalElemento(formOverlay); abrirMenuEditarDatos(); };
 
-  formOverlay.querySelector(".btn-confirm-edit-data").onclick = () => {
+  formOverlay.querySelector(".btn-confirm-edit-data").onclick = async () => {
     const pNombre = document.getElementById("edit-nombre").value.trim();
     const pUbi = document.getElementById("edit-ubicacion").value.trim();
     const pWa = document.getElementById("edit-wa").value.trim();
@@ -1480,8 +1527,11 @@ async function abrirEditorInfo() {
       whatsapp: pWa
     });
     localStorage.setItem("tech_datos", JSON.stringify(nuevosDatos));
+    try {
+      await enviarPostAdmin({ action: "save_config", key: "datos", value: nuevosDatos });
+    } catch (e) {}
     alert("Datos actualizados correctamente.");
-    formOverlay.remove();
+    cerrarModalElemento(formOverlay);
     aplicarDatosGenerales();
     abrirMenuEditarDatos();
   };
@@ -1491,12 +1541,12 @@ async function abrirEditorRedes() {
   const redes = await obtenerRedes();
   const formOverlay = document.createElement("div");
   formOverlay.className = "producto-overlay";
-  
-  let htmlList = redes.map((r, i) => `
+
+  const htmlList = redes.map((r, i) => `
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eaeaea; padding:12px 15px; background: #fdfdfd; border-radius: 8px; margin-bottom: 8px;">
       <span style="color:#333; display:flex; align-items:center; gap:8px;">
-        <span class="material-symbols-outlined" style="color:#e83e8c;">${r.icono}</span>
-        <span style="flex:1;"><strong>${r.nombre}</strong><br><small style="color:#888; word-break:break-all;">${r.url}</small></span>
+        <span class="material-symbols-outlined" style="color:#e83e8c;">${escapeHtml(r.icono)}</span>
+        <span style="flex:1;"><strong>${escapeHtml(r.nombre)}</strong><br><small style="color:#888; word-break:break-all;">${escapeHtml(r.url)}</small></span>
       </span>
       <div style="display:flex; gap:5px; flex-shrink:0;">
         <button onclick="editarRed(${i})" style="background:#ffc107; color:black; border:none; border-radius:6px; cursor:pointer; padding:6px 10px;"><span class="material-symbols-outlined" style="font-size:18px;">edit</span></button>
@@ -1514,45 +1564,49 @@ async function abrirEditorRedes() {
     </div>
   `;
   document.body.appendChild(formOverlay);
+  actualizarScrollBody();
 
-  window.borrarRed = (idx) => {
+  window.borrarRed = async (idx) => {
     if (!confirm("¿Eliminar esta red social?")) return;
     redes.splice(idx, 1);
     localStorage.setItem("tech_redes", JSON.stringify(redes));
+    try {
+      await enviarPostAdmin({ action: "save_config", key: "redes", value: redes });
+    } catch (e) {}
     cargarRedes();
-    formOverlay.remove();
+    cerrarModalElemento(formOverlay);
     abrirEditorRedes();
   };
 
   window.editarRed = (idx) => {
-    formOverlay.remove();
+    cerrarModalElemento(formOverlay);
     abrirFormularioRed(idx, redes[idx]);
   };
 
   formOverlay.querySelector(".btn-agregar-red").onclick = () => {
-    formOverlay.remove();
+    cerrarModalElemento(formOverlay);
     abrirFormularioRed(-1, null);
   };
 
-  formOverlay.querySelector(".btn-regresar").onclick = () => { formOverlay.remove(); abrirMenuEditarDatos(); };
+  formOverlay.querySelector(".btn-regresar").onclick = () => { cerrarModalElemento(formOverlay); abrirMenuEditarDatos(); };
 }
 
 async function abrirFormularioRed(idx, redActual) {
   const redes = await obtenerRedes();
   const esEdicion = idx >= 0;
   const red = redActual || { nombre: "", url: "", icono: "link" };
-  
+
   const formOverlay = document.createElement("div");
   formOverlay.className = "producto-overlay";
   formOverlay.innerHTML = `
     <div class="producto-detalle-profesional" style="max-width: 400px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
       <h2 style="color: #e83e8c; text-align: center; margin-bottom: 5px; width: 100%;"><span class="material-symbols-outlined">${esEdicion ? 'edit' : 'add'}</span> ${esEdicion ? 'Editar' : 'Agregar'} Red</h2>
       
-      <div class="form-group"><label>Nombre (ej. TikTok, YouTube)</label><input type="text" id="fr-nombre" value="${red.nombre}"></div>
-      <div class="form-group"><label>Enlace (URL)</label><input type="text" id="fr-url" value="${red.url}"></div>
+      <div class="form-group"><label for="fr-nombre">Nombre (ej. TikTok, YouTube)</label><input type="text" id="fr-nombre" value="${escapeHtml(red.nombre)}"></div>
+      <div class="form-group"><label for="fr-url">Enlace (URL)</label><input type="text" id="fr-url" value="${escapeHtml(red.url)}"></div>
       <div class="form-group">
-        <label>Ícono (Material Symbols)</label>
-        <input type="text" id="fr-icono" value="${red.icono}" placeholder="ej: public, smart_display, video_library">
+        <label for="fr-icono">Ícono (Material Symbols)</label>
+        <input type="text" id="fr-icono" value="${escapeHtml(red.icono)}" placeholder="ej: public, smart_display, video_library">
         <small style="color:#888;">Busca íconos en Google Fonts y escribe su código de icono (ej: public).</small>
       </div>
 
@@ -1563,12 +1617,13 @@ async function abrirFormularioRed(idx, redActual) {
     </div>
   `;
   document.body.appendChild(formOverlay);
+  actualizarScrollBody();
 
-  formOverlay.querySelector(".btn-cancel").onclick = () => { formOverlay.remove(); abrirEditorRedes(); };
-  formOverlay.querySelector(".btn-save").onclick = () => {
+  formOverlay.querySelector(".btn-cancel").onclick = () => { cerrarModalElemento(formOverlay); abrirEditorRedes(); };
+  formOverlay.querySelector(".btn-save").onclick = async () => {
     const nombre = document.getElementById("fr-nombre").value.trim();
     const url = document.getElementById("fr-url").value.trim();
-    const icono = document.getElementById("fr-icono").value.trim() || 'link';
+    const icono = document.getElementById("fr-icono").value.trim() || "link";
 
     if (!nombre || !url) return alert("Nombre y URL son obligatorios.");
 
@@ -1579,8 +1634,11 @@ async function abrirFormularioRed(idx, redActual) {
     }
 
     localStorage.setItem("tech_redes", JSON.stringify(redes));
+    try {
+      await enviarPostAdmin({ action: "save_config", key: "redes", value: redes });
+    } catch (e) {}
     cargarRedes();
-    formOverlay.remove();
+    cerrarModalElemento(formOverlay);
     abrirEditorRedes();
   };
 }
@@ -1589,12 +1647,12 @@ async function abrirEditorFAQs() {
   const faqs = await obtenerFAQs();
   const formOverlay = document.createElement("div");
   formOverlay.className = "producto-overlay";
-  
-  let htmlList = faqs.map((f, i) => `
+
+  const htmlList = faqs.map((f, i) => `
     <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eaeaea; padding:12px 15px; background: #fdfdfd; border-radius: 8px; margin-bottom: 8px;">
       <span style="color:#333; flex:1; padding-right:10px;">
-        <strong>${f.pregunta}</strong><br>
-        <small style="color:#555;">${f.respuesta}</small>
+        <strong>${escapeHtml(f.pregunta)}</strong><br>
+        <small style="color:#555;">${escapeHtml(f.respuesta)}</small>
       </span>
       <div style="display:flex; gap:5px; flex-shrink:0;">
         <button onclick="editarFaq(${i})" style="background:#ffc107; color:black; border:none; border-radius:6px; cursor:pointer; padding:6px 10px;"><span class="material-symbols-outlined" style="font-size:18px;">edit</span></button>
@@ -1612,44 +1670,48 @@ async function abrirEditorFAQs() {
     </div>
   `;
   document.body.appendChild(formOverlay);
+  actualizarScrollBody();
 
-  window.borrarFaq = (idx) => {
+  window.borrarFaq = async (idx) => {
     if (!confirm("¿Eliminar esta FAQ?")) return;
     faqs.splice(idx, 1);
     localStorage.setItem("tech_faqs", JSON.stringify(faqs));
+    try {
+      await enviarPostAdmin({ action: "save_config", key: "faqs", value: faqs });
+    } catch (e) {}
     cargarFAQs();
-    formOverlay.remove();
+    cerrarModalElemento(formOverlay);
     abrirEditorFAQs();
   };
 
   window.editarFaq = (idx) => {
-    formOverlay.remove();
+    cerrarModalElemento(formOverlay);
     abrirFormularioFaq(idx, faqs[idx]);
   };
 
   formOverlay.querySelector(".btn-agregar-faq").onclick = () => {
-    formOverlay.remove();
+    cerrarModalElemento(formOverlay);
     abrirFormularioFaq(-1, null);
   };
 
-  formOverlay.querySelector(".btn-regresar").onclick = () => { formOverlay.remove(); abrirMenuEditarDatos(); };
+  formOverlay.querySelector(".btn-regresar").onclick = () => { cerrarModalElemento(formOverlay); abrirMenuEditarDatos(); };
 }
 
 async function abrirFormularioFaq(idx, faqActual) {
   const faqs = await obtenerFAQs();
   const esEdicion = idx >= 0;
   const faq = faqActual || { pregunta: "", respuesta: "" };
-  
+
   const formOverlay = document.createElement("div");
   formOverlay.className = "producto-overlay";
   formOverlay.innerHTML = `
     <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
       <h2 style="color: #007bff; text-align: center; margin-bottom: 5px; width: 100%;"><span class="material-symbols-outlined">${esEdicion ? 'edit' : 'add'}</span> ${esEdicion ? 'Editar' : 'Agregar'} FAQ</h2>
       
-      <div class="form-group"><label>Pregunta</label><input type="text" id="ff-pregunta" value="${faq.pregunta.replace(/"/g, '&quot;')}"></div>
+      <div class="form-group"><label for="ff-pregunta">Pregunta</label><input type="text" id="ff-pregunta" value="${escapeHtml(faq.pregunta)}"></div>
       <div class="form-group">
-        <label>Respuesta</label>
-        <textarea id="ff-respuesta" rows="4" style="padding:10px; border:1px solid #ccc; border-radius:8px; font-size:15px; outline:none; resize:vertical; font-family:inherit;">${faq.respuesta.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</textarea>
+        <label for="ff-respuesta">Respuesta</label>
+        <textarea id="ff-respuesta" rows="4" style="padding:10px; border:1px solid #ccc; border-radius:8px; font-size:15px; outline:none; resize:vertical; font-family:inherit;">${escapeHtml(faq.respuesta)}</textarea>
       </div>
 
       <div style="display: flex; justify-content: space-between; margin-top: 15px; width: 100%;">
@@ -1659,9 +1721,10 @@ async function abrirFormularioFaq(idx, faqActual) {
     </div>
   `;
   document.body.appendChild(formOverlay);
+  actualizarScrollBody();
 
-  formOverlay.querySelector(".btn-cancel").onclick = () => { formOverlay.remove(); abrirEditorFAQs(); };
-  formOverlay.querySelector(".btn-save").onclick = () => {
+  formOverlay.querySelector(".btn-cancel").onclick = () => { cerrarModalElemento(formOverlay); abrirEditorFAQs(); };
+  formOverlay.querySelector(".btn-save").onclick = async () => {
     const pregunta = document.getElementById("ff-pregunta").value.trim();
     const respuesta = document.getElementById("ff-respuesta").value.trim();
 
@@ -1674,8 +1737,11 @@ async function abrirFormularioFaq(idx, faqActual) {
     }
 
     localStorage.setItem("tech_faqs", JSON.stringify(faqs));
+    try {
+      await enviarPostAdmin({ action: "save_config", key: "faqs", value: faqs });
+    } catch (e) {}
     cargarFAQs();
-    formOverlay.remove();
+    cerrarModalElemento(formOverlay);
     abrirEditorFAQs();
   };
 }
@@ -1688,15 +1754,15 @@ if (btnEditarProd) {
     const formOverlay = document.createElement("div");
     formOverlay.className = "producto-overlay";
 
-    let prodConIndex = productos.map((p, i) => Object.assign({}, p, { _oIdx: i }));
+    const prodConIndex = productos.map((p, i) => Object.assign({}, p, { _oIdx: i }));
     prodConIndex.sort((a, b) => {
       if (a.categoria === b.categoria) return a.nombre.localeCompare(b.nombre);
       return a.categoria.localeCompare(b.categoria);
     });
 
-    let htmlList = prodConIndex.map(p => `
+    const htmlList = prodConIndex.map(p => `
       <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eaeaea; padding:12px 15px; background: #fdfdfd; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-        <span style="color:#333;"><small style="color:#888;">${p.categoria}</small><br><strong>${p.nombre}</strong> <br> <small style="color:#00AEEF; font-weight:bold;">C$${p.precio}</small></span>
+        <span style="color:#333;"><small style="color:#888;">${escapeHtml(p.categoria)}</small><br><strong>${escapeHtml(p.nombre)}</strong> <br> <small style="color:#00AEEF; font-weight:bold;">C$${escapeHtml(p.precio)}</small></span>
         <button onclick="editarProd(${p._oIdx})" style="background:#ffc107; color:black; border:none; border-radius:6px; cursor:pointer; padding:8px 12px; transition:0.3s; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1"><span class="material-symbols-outlined" style="font-size:18px;">edit</span></button>
       </div>
     `).join("");
@@ -1709,35 +1775,36 @@ if (btnEditarProd) {
       </div>
     `;
     document.body.appendChild(formOverlay);
+    actualizarScrollBody();
 
     window.editarProd = (idx) => {
       const p = productos[idx];
-      const imgActual = (p.imagen && p.imagen !== 'img/generico.png') ? p.imagen : '';
+      const imgActual = (p.imagen && p.imagen !== "img/generico.png") ? p.imagen : "";
 
       const catBtnsHtmlEdi = CATEGORIAS_BD.map(cat =>
-        `<button type="button" class="cat-btn${cat === p.categoria ? ' cat-btn-active' : ''}" data-cat="${cat}">${cat}</button>`
-      ).join('');
+        `<button type="button" class="cat-btn${cat === p.categoria ? ' cat-btn-active' : ''}" data-cat="${escapeHtml(cat)}">${escapeHtml(cat)}</button>`
+      ).join("");
 
       const formEdit = document.createElement("div");
       formEdit.className = "producto-overlay";
       formEdit.innerHTML = `
         <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left;">
-          <h2 style="color: #ffc107; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">edit</span> Editando: ${p.nombre}</h2>
+          <h2 style="color: #ffc107; text-align: center; margin-bottom: 5px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">edit</span> Editando: ${escapeHtml(p.nombre)}</h2>
 
-          <div class="form-group"><label>Nombre</label><input type="text" id="edi-nombre" value="${p.nombre}"></div>
+          <div class="form-group"><label for="edi-nombre">Nombre</label><input type="text" id="edi-nombre" value="${escapeHtml(p.nombre)}"></div>
 
           <div class="form-group">
-            <label>Categoría &nbsp;<span id="edi-cat-label" style="color:#00AEEF; font-size:13px;">${p.categoria ? '✓ ' + p.categoria : ''}</span></label>
-            <input type="hidden" id="edi-categoria" value="${p.categoria}">
+            <label>Categoría &nbsp;<span id="edi-cat-label" style="color:#00AEEF; font-size:13px;">${p.categoria ? '✓ ' + escapeHtml(p.categoria) : ''}</span></label>
+            <input type="hidden" id="edi-categoria" value="${escapeHtml(p.categoria)}">
             <div class="cat-picker">${catBtnsHtmlEdi}</div>
           </div>
 
-          <div class="form-group"><label>Precio ($)</label><input type="number" id="edi-precio" value="${p.precio}" min="0"></div>
-          <div class="form-group"><label>Descripción</label><input type="text" id="edi-descripcion" value="${p.descripcion.replace(/"/g, '&quot;')}"></div>
+          <div class="form-group"><label for="edi-precio">Precio (C$)</label><input type="number" id="edi-precio" value="${escapeHtml(p.precio)}" min="0"></div>
+          <div class="form-group"><label for="edi-descripcion">Descripción</label><input type="text" id="edi-descripcion" value="${escapeHtml(p.descripcion)}"></div>
 
           <div class="form-group">
-            <label>Imagen — URL o link de Google Drive</label>
-            <input type="text" id="edi-imagen" value="${imgActual}" placeholder="https://... o link de compartir de Drive">
+            <label for="edi-imagen">Imagen — URL o link de Google Drive</label>
+            <input type="text" id="edi-imagen" value="${escapeHtml(imgActual)}" placeholder="https://... o link de compartir de Drive">
             <small style="color:#888; margin-top:4px; display:block;">Los links de Google Drive se convierten automáticamente.</small>
           </div>
 
@@ -1748,14 +1815,14 @@ if (btnEditarProd) {
         </div>
       `;
       document.body.appendChild(formEdit);
+      actualizarScrollBody();
 
-      // Selector de categorías
-      formEdit.querySelectorAll('.cat-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          formEdit.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('cat-btn-active'));
-          btn.classList.add('cat-btn-active');
-          document.getElementById('edi-categoria').value = btn.dataset.cat;
-          document.getElementById('edi-cat-label').textContent = '✓ ' + btn.dataset.cat;
+      formEdit.querySelectorAll(".cat-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          formEdit.querySelectorAll(".cat-btn").forEach(b => b.classList.remove("cat-btn-active"));
+          btn.classList.add("cat-btn-active");
+          document.getElementById("edi-categoria").value = btn.dataset.cat;
+          document.getElementById("edi-cat-label").textContent = "✓ " + btn.dataset.cat;
         });
       });
 
@@ -1773,35 +1840,32 @@ if (btnEditarProd) {
         btnGuardarEdi.disabled = true;
 
         try {
-          await fetch(GOOGLE_SHEETS_API, {
-            method: 'POST',
-            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify({
-              action: "edit",
-              old_nombre: p.nombre,
-              nombre: ediNombre,
-              categoria: ediCat,
-              precio: parseFloat(ediPrecio),
-              descripcion: ediDesc,
-              imagen: ediImagen || p.imagen || 'img/generico.png'
-            })
+          await enviarPostAdmin({
+            action: "edit",
+            old_nombre: p.nombre,
+            nombre: ediNombre,
+            categoria: ediCat,
+            precio: parseFloat(ediPrecio),
+            descripcion: ediDesc,
+            imagen: ediImagen || p.imagen || "img/generico.png"
           });
+          localStorage.removeItem("tech_productos_v2");
           alert("Producto modificado en Google Sheets.");
-          formEdit.remove();
-          formOverlay.remove();
-          cargarProductos();
+          cerrarModalElemento(formEdit);
+          cerrarModalElemento(formOverlay);
+          await cargarProductos(true);
           if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
           btnEditarProd.click();
-        } catch(e) {
-          alert("Error modificando en Sheets.");
+        } catch (e) {
+          alert("Error modificando en Sheets: " + e.message);
           btnGuardarEdi.textContent = "Guardar Cambios";
           btnGuardarEdi.disabled = false;
         }
       };
 
-      formEdit.querySelector(".btn-cancel-edi").onclick = () => formEdit.remove();
+      formEdit.querySelector(".btn-cancel-edi").onclick = () => cerrarModalElemento(formEdit);
     };
 
-    formOverlay.querySelector(".btn-cancel-edit").onclick = () => formOverlay.remove();
+    formOverlay.querySelector(".btn-cancel-edit").onclick = () => cerrarModalElemento(formOverlay);
   };
 }

@@ -5,6 +5,18 @@ body {
   background: #f4f4f4;
 }
 
+.material-symbols-outlined {
+  vertical-align: middle;
+  font-size: 20px;
+}
+
+button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+
 /* -------------------- HEADER -------------------- */
 header {
   display: flex;
@@ -53,6 +65,7 @@ header {
   align-items: center;
   gap: 10px;
   margin-left: auto;
+  flex-wrap: wrap;
 }
 
 .header-buttons button {
@@ -302,30 +315,6 @@ header {
   font-weight: bold;
 }
 
-/* -------------------- BOTÓN ESCRIBIR AHORA (CATÁLOGO) -------------------- */
-.btn-escribir-ahora {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  margin-top: 10px;
-  padding: 10px 14px;
-  background: #25D366;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background 0.3s, transform 0.2s;
-}
-
-.btn-escribir-ahora:hover {
-  background: #1dad52;
-  transform: translateY(-2px);
-}
-
 /* -------------------- UBICACIÓN / MAPA -------------------- */
 .ubicacion-section {
   padding: 3rem 2rem;
@@ -386,6 +375,8 @@ header {
 
 .contacto button {
   background: #00AEEF;
+  color: white;
+  font-weight: bold;
   border: none;
   padding: 12px 24px;
   border-radius: 8px;
@@ -423,6 +414,7 @@ header {
   color: #333;
   border-radius: 5px;
   transition: all 0.3s ease;
+  justify-content: flex-start;
 }
 
 /* 🔥 HOVER AZUL */
@@ -443,7 +435,7 @@ header {
 
 /* 🔥 CUANDO ESTÁ ACTIVO */
 .faq-item.active .faq-answer {
-  max-height: 200px;
+  max-height: 300px;
   padding: 10px;
 }
 
@@ -496,7 +488,7 @@ header {
   border-radius: 10px;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   font-size: 15px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
@@ -525,6 +517,9 @@ footer p {
 
 /* LINKS */
 .social a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   text-decoration: none;
   color: #ccc;
   font-size: 15px;
@@ -539,79 +534,196 @@ footer p {
   color: white;
 }
 
-
-/* -------------------- FORMULARIO -------------------- */
-
-.formulario-overlay {
+/* -------------------- MODALES Y DETALLE DE PRODUCTO -------------------- */
+.producto-overlay {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  display: none;
-  /* oculto por defecto */
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(5px);
+  display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 10000;
+  z-index: 9999;
 }
 
-.formulario-overlay.visible {
-  display: flex;
-}
-
-.formulario-contenedor {
+.producto-detalle-profesional {
   background: #fff;
-  padding: 30px;
-  border-radius: 15px;
+  border-radius: 20px;
+  max-width: 950px;
   width: 90%;
-  max-width: 500px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 40px;
+  padding: 40px;
+  box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+  position: relative;
+  align-items: center;
+}
+
+.detalle-imagen {
+  flex: 1;
+  min-width: 250px;
+  display: flex;
+  justify-content: center;
+}
+
+.detalle-imagen img {
+  width: 100%;
+  max-width: 350px;
+  border-radius: 15px;
+  object-fit: cover;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.detalle-info {
+  flex: 1.5;
+  min-width: 300px;
   display: flex;
   flex-direction: column;
-  gap: 15px;
 }
 
-.formulario-contenedor h2 {
-  text-align: center;
+.detalle-titulo {
+  font-size: 32px;
+  color: #003366;
+  margin: 0 0 15px 0;
+  line-height: 1.2;
 }
 
-.formulario-contenedor input,
-.formulario-contenedor textarea {
-  width: 100%;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  resize: none;
+.detalle-categoria {
+  background: #eef7ff;
+  color: #00AEEF;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 14px;
+  font-weight: bold;
+  display: inline-block;
+  align-self: flex-start;
+  margin-bottom: 20px;
 }
 
-.form-buttons {
+.detalle-categoria span {
+  color: #555;
+  font-weight: normal;
+}
+
+.detalle-desc {
+  font-size: 17px;
+  color: #444;
+  line-height: 1.6;
+  margin-bottom: 25px;
+}
+
+.detalle-precio {
+  font-size: 36px;
+  font-weight: 900;
+  color: #28a745;
+  margin-bottom: 30px;
+}
+
+.detalle-acciones {
   display: flex;
-  justify-content: space-between;
-  gap: 10px;
+  gap: 15px;
+  margin-bottom: 20px;
+  width: 100%;
 }
 
-.btn-agendar-final {
-  flex: 1;
+.producto-btn {
   background: #00AEEF;
   color: #fff;
   border: none;
-  padding: 10px;
-  border-radius: 8px;
+  padding: 15px 25px;
+  font-weight: bold;
+  font-size: 16px;
+  border-radius: 10px;
   cursor: pointer;
-}
-
-.btn-cerrar-form {
   flex: 1;
-  background: #555;
-  color: #fff;
-  border: none;
-  padding: 10px;
-  border-radius: 8px;
-  cursor: pointer;
+  text-align: center;
+  transition: all 0.3s;
 }
 
+.producto-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
 
+.btn-amarillo { background: #ffc107; color: #000; }
+.btn-verde { background: #28a745; }
+
+.volver-btn {
+  margin-top: 10px;
+  background: #555;
+  color: white;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.btn-outline {
+  background: transparent;
+  color: #555;
+  border: 1px solid #ccc;
+  align-self: flex-start;
+  font-weight: bold;
+}
+
+.btn-outline:hover {
+  background: #eee;
+  color: #000;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
+}
+
+.form-group label {
+  font-weight: bold;
+  color: #003366;
+  font-size: 14px;
+}
+
+.form-group input {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.3s;
+}
+
+.form-group input:focus {
+  border-color: #00AEEF;
+}
+
+.producto-detalle-profesional::-webkit-scrollbar,
+.custom-scroll-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.producto-detalle-profesional::-webkit-scrollbar-track,
+.custom-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.producto-detalle-profesional::-webkit-scrollbar-thumb,
+.custom-scroll-container::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 10px;
+}
+
+.producto-detalle-profesional::-webkit-scrollbar-thumb:hover,
+.custom-scroll-container::-webkit-scrollbar-thumb:hover {
+  background: #999;
+}
 
 /* -------------------- RESPONSIVE MÓVIL -------------------- */
 @media (max-width: 768px) {
