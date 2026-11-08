@@ -450,7 +450,7 @@ async function obtenerProductos(forzarRecarga = false) {
 
   promesaProductos = (async () => {
     try {
-      const res = await fetch(GOOGLE_SHEETS_API);
+      const res = await fetch(`${GOOGLE_SHEETS_API}?_t=${Date.now()}`, { cache: "no-store" });
       if (res.ok) {
         let products = await res.json();
         if (Array.isArray(products) && products.length > 0) {
@@ -535,7 +535,7 @@ const DEFAULTS_DATOS = {
 
 async function sincronizarConfigRemota() {
   try {
-    const res = await fetch(`${GOOGLE_SHEETS_API}?type=config`);
+    const res = await fetch(`${GOOGLE_SHEETS_API}?type=config&_t=${Date.now()}`, { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
       if (data && data.status === "success") {
@@ -953,7 +953,10 @@ const DEFAULTS_CATEGORIAS = CATEGORIAS_BD.map(cat => ({
   imagen: IMAGENES_CATEGORIAS[cat] || "img/generico.png"
 }));
 
-async function obtenerCategorias() {
+async function obtenerCategorias(forzarRecarga = false) {
+  if (forzarRecarga) {
+    await sincronizarConfigRemota();
+  }
   const cached = localStorage.getItem("tech_categorias");
   if (cached) {
     try {
@@ -1591,7 +1594,7 @@ if (btnEliminar) {
 
 /* -------------------- GESTIÓN DE CATEGORÍAS (AGREGAR, EDITAR, ELIMINAR) -------------------- */
 async function abrirEditorCategorias() {
-  const categorias = await obtenerCategorias();
+  const categorias = await obtenerCategorias(true);
   const productos = await obtenerProductos();
 
   const formOverlay = document.createElement("div");
