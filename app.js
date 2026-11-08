@@ -1396,7 +1396,7 @@ if (btnAdmin) {
 
 if (btnAgregar) {
   btnAgregar.onclick = async () => {
-    const categorias = await obtenerCategorias();
+    const categorias = await obtenerCategorias(true);
     const catBtnsHtml = categorias.map(c =>
       `<button type="button" class="cat-btn" data-cat="${escapeHtml(c.nombre)}">${escapeHtml(c.nombre)}</button>`
     ).join("");
@@ -1491,7 +1491,7 @@ if (btnAgregar) {
 if (btnEliminar) {
   btnEliminar.onclick = async () => {
     const productos = await obtenerProductos(true);
-    const categorias = await obtenerCategorias();
+    const categorias = await obtenerCategorias(true);
 
     const formOverlay = document.createElement("div");
     formOverlay.className = "producto-overlay";
@@ -2070,7 +2070,7 @@ async function abrirFormularioFaq(idx, faqActual) {
 if (btnEditarProd) {
   btnEditarProd.onclick = async () => {
     const productos = await obtenerProductos(true);
-    const categorias = await obtenerCategorias();
+    const categorias = await obtenerCategorias(true);
 
     const formOverlay = document.createElement("div");
     formOverlay.className = "producto-overlay";
