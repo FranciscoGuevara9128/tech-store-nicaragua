@@ -428,7 +428,18 @@ async function enviarPostAdmin(payload) {
 let productosEnMemoria = null;
 let promesaProductos = null;
 
+function invalidarCacheProductos() {
+  productosEnMemoria = null;
+  promesaProductos = null;
+  localStorage.removeItem("tech_productos_v2");
+}
+
 async function obtenerProductos(forzarRecarga = false) {
+  if (forzarRecarga) {
+    productosEnMemoria = null;
+    promesaProductos = null;
+  }
+
   if (!forzarRecarga && productosEnMemoria) {
     return productosEnMemoria;
   }
@@ -528,7 +539,12 @@ async function sincronizarConfigRemota() {
     if (res.ok) {
       const data = await res.json();
       if (data && data.status === "success") {
-        if (data.datos) localStorage.setItem("tech_datos", JSON.stringify(data.datos));
+        if (data.datos) {
+          localStorage.setItem("tech_datos", JSON.stringify(data.datos));
+          if (Array.isArray(data.datos.categorias) && data.datos.categorias.length > 0) {
+            localStorage.setItem("tech_categorias", JSON.stringify(data.datos.categorias));
+          }
+        }
         if (Array.isArray(data.faqs) && data.faqs.length > 0) localStorage.setItem("tech_faqs", JSON.stringify(data.faqs));
         if (Array.isArray(data.redes) && data.redes.length > 0) localStorage.setItem("tech_redes", JSON.stringify(data.redes));
       }
@@ -932,20 +948,57 @@ const IMAGENES_CATEGORIAS = {
   "Enfriadores Móviles": "img/prod_enfriador-cx07.jpg"
 };
 
+const DEFAULTS_CATEGORIAS = CATEGORIAS_BD.map(cat => ({
+  nombre: cat,
+  imagen: IMAGENES_CATEGORIAS[cat] || "img/generico.png"
+}));
+
+async function obtenerCategorias() {
+  const cached = localStorage.getItem("tech_categorias");
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return parsed.map(c => typeof c === "string"
+          ? { nombre: c, imagen: IMAGENES_CATEGORIAS[c] || "img/generico.png" }
+          : { nombre: c.nombre, imagen: c.imagen || IMAGENES_CATEGORIAS[c.nombre] || "img/generico.png" }
+        );
+      }
+    } catch (e) {}
+  }
+
+  localStorage.setItem("tech_categorias", JSON.stringify(DEFAULTS_CATEGORIAS));
+  return JSON.parse(JSON.stringify(DEFAULTS_CATEGORIAS));
+}
+
+async function guardarCategorias(categoriasLista) {
+  localStorage.setItem("tech_categorias", JSON.stringify(categoriasLista));
+  try {
+    const datosActuales = await obtenerDatosGenerales();
+    const nuevosDatos = Object.assign({}, datosActuales, { categorias: categoriasLista });
+    localStorage.setItem("tech_datos", JSON.stringify(nuevosDatos));
+    await enviarPostAdmin({ action: "save_config", key: "datos", value: nuevosDatos });
+  } catch (e) {
+    console.warn("Guardado local de categorías aplicado:", e);
+  }
+}
+
 // -------------------- CATEGORÍAS --------------------
 async function cargarCategorias() {
   try {
-    const categories = CATEGORIAS_BD;
+    if (!heroContainer) return;
+    const categories = await obtenerCategorias();
 
     heroContainer.innerHTML = "";
 
-    categories.forEach(categoria => {
+    categories.forEach(catObj => {
+      const categoria = catObj.nombre;
       const card = document.createElement("div");
       card.className = "hero-card";
       card.setAttribute("role", "listitem");
       card.setAttribute("tabindex", "0");
 
-      const imgSrc = IMAGENES_CATEGORIAS[categoria] || "img/generico.png";
+      const imgSrc = catObj.imagen || IMAGENES_CATEGORIAS[categoria] || "img/generico.png";
 
       card.innerHTML = `
         <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(categoria)} - Tech Store Nicaragua" loading="lazy" style="aspect-ratio: 1/1; object-fit: cover; width: 100%; border-radius: 10px 10px 0 0;">
@@ -1204,6 +1257,7 @@ const btnAdmin = document.getElementById("btn-admin");
 const btnCerrarSesion = document.getElementById("btn-cerrar-sesion");
 const btnAgregar = document.getElementById("btn-agregar-producto");
 const btnEliminar = document.getElementById("btn-eliminar-producto");
+const btnCategorias = document.getElementById("btn-categorias");
 const btnEditarData = document.getElementById("btn-editar-datos");
 const btnEditarProd = document.getElementById("btn-editar-producto");
 const btnRecargarCache = document.getElementById("btn-recargar-cache");
@@ -1217,7 +1271,7 @@ if (btnRecargarCache) {
         try {
           const products = JSON.parse(JSON.stringify(PRODUCTOS_BD));
           await enviarPostAdmin({ action: "sync_all", products });
-          localStorage.removeItem("tech_productos_v2");
+          invalidarCacheProductos();
           alert("Sincronización completa. Se recargará el catálogo.");
           location.reload();
         } catch (err) {
@@ -1237,6 +1291,7 @@ function checkAdmin() {
     if (btnCerrarSesion) btnCerrarSesion.style.display = "inline-flex";
     if (btnAgregar) btnAgregar.style.display = "inline-flex";
     if (btnEliminar) btnEliminar.style.display = "inline-flex";
+    if (btnCategorias) btnCategorias.style.display = "inline-flex";
     if (btnEditarData) btnEditarData.style.display = "inline-flex";
     if (btnEditarProd) btnEditarProd.style.display = "inline-flex";
     if (btnRecargarCache) btnRecargarCache.style.display = "inline-flex";
@@ -1245,12 +1300,17 @@ function checkAdmin() {
     if (btnCerrarSesion) btnCerrarSesion.style.display = "none";
     if (btnAgregar) btnAgregar.style.display = "none";
     if (btnEliminar) btnEliminar.style.display = "none";
+    if (btnCategorias) btnCategorias.style.display = "none";
     if (btnEditarData) btnEditarData.style.display = "none";
     if (btnEditarProd) btnEditarProd.style.display = "none";
     if (btnRecargarCache) btnRecargarCache.style.display = "none";
   }
 }
 checkAdmin();
+
+if (btnCategorias) {
+  btnCategorias.onclick = () => abrirEditorCategorias();
+}
 
 if (btnCerrarSesion) {
   btnCerrarSesion.onclick = () => {
@@ -1326,9 +1386,10 @@ if (btnAdmin) {
 }
 
 if (btnAgregar) {
-  btnAgregar.onclick = () => {
-    const catBtnsHtml = CATEGORIAS_BD.map(cat =>
-      `<button type="button" class="cat-btn" data-cat="${escapeHtml(cat)}">${escapeHtml(cat)}</button>`
+  btnAgregar.onclick = async () => {
+    const categorias = await obtenerCategorias();
+    const catBtnsHtml = categorias.map(c =>
+      `<button type="button" class="cat-btn" data-cat="${escapeHtml(c.nombre)}">${escapeHtml(c.nombre)}</button>`
     ).join("");
 
     const formOverlay = document.createElement("div");
@@ -1340,7 +1401,10 @@ if (btnAgregar) {
         <div class="form-group"><label for="add-nombre">Nombre</label><input type="text" id="add-nombre"></div>
 
         <div class="form-group">
-          <label>Categoría &nbsp;<span id="add-cat-label" style="color:#00AEEF; font-size:13px;"></span></label>
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <label>Categoría &nbsp;<span id="add-cat-label" style="color:#00AEEF; font-size:13px;"></span></label>
+            <button type="button" class="btn-ir-categorias" style="background:transparent; border:none; color:#6f42c1; font-size:12px; font-weight:bold; cursor:pointer; padding:2px 6px;"><span class="material-symbols-outlined" style="font-size:15px;">category</span> Gestionar categorías</button>
+          </div>
           <input type="hidden" id="add-categoria">
           <div class="cat-picker">${catBtnsHtml}</div>
         </div>
@@ -1362,6 +1426,11 @@ if (btnAgregar) {
     `;
     document.body.appendChild(formOverlay);
     actualizarScrollBody();
+
+    formOverlay.querySelector(".btn-ir-categorias").onclick = () => {
+      cerrarModalElemento(formOverlay);
+      abrirEditorCategorias();
+    };
 
     formOverlay.querySelectorAll(".cat-btn").forEach(btn => {
       btn.addEventListener("click", () => {
@@ -1394,8 +1463,8 @@ if (btnAgregar) {
           descripcion: pDesc,
           imagen: pImagen || "img/generico.png"
         });
-        localStorage.removeItem("tech_productos_v2");
-        alert("Producto agregado en Google Sheets.");
+        invalidarCacheProductos();
+        alert("Producto agregado exitosamente.");
         cerrarModalElemento(formOverlay);
         await cargarProductos(true);
         if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
@@ -1412,42 +1481,95 @@ if (btnAgregar) {
 
 if (btnEliminar) {
   btnEliminar.onclick = async () => {
-    const productos = await obtenerProductos();
+    const productos = await obtenerProductos(true);
+    const categorias = await obtenerCategorias();
 
     const formOverlay = document.createElement("div");
     formOverlay.className = "producto-overlay";
 
     const prodConIndex = productos.map((p, i) => Object.assign({}, p, { _oIdx: i }));
     prodConIndex.sort((a, b) => {
-      if (a.categoria === b.categoria) return a.nombre.localeCompare(b.nombre);
-      return a.categoria.localeCompare(b.categoria);
+      if (a.categoria === b.categoria) return String(a.nombre).localeCompare(String(b.nombre));
+      return String(a.categoria).localeCompare(String(b.categoria));
     });
 
-    const htmlList = prodConIndex.map(p => `
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eaeaea; padding:12px 15px; background: #fdfdfd; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-        <span style="color:#333;"><small style="color:#888;">${escapeHtml(p.categoria)}</small><br><strong>${escapeHtml(p.nombre)}</strong> <br> <small style="color:#00AEEF; font-weight:bold;">C$${escapeHtml(p.precio)}</small></span>
-        <button onclick="borrarProd(${p._oIdx})" style="background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; padding:8px 12px; transition:0.3s; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1"><span class="material-symbols-outlined" style="font-size:18px;">delete</span></button>
-      </div>
-    `).join("");
+    const catOptionsHtml = categorias.map(c =>
+      `<option value="${escapeHtml(c.nombre)}">${escapeHtml(c.nombre)}</option>`
+    ).join("");
 
     formOverlay.innerHTML = `
-      <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
+      <div class="producto-detalle-profesional" style="max-width: 550px; flex-direction: column; gap: 12px; text-align: left; padding: 28px;">
         <h2 style="color: #dc3545; text-align: center; margin-bottom: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">delete</span> Eliminar Producto</h2>
-        <div class="custom-scroll-container" id="lista-borrar" style="display:flex; flex-direction:column; gap:8px; max-height: 50vh; overflow-y: auto; padding-right: 10px; border: 1px solid #eee; border-radius: 8px; padding: 10px;">${htmlList}</div>
-        <button class="btn-cancel-del volver-btn" style="margin-top:10px; width:100%;">Cerrar</button>
+        
+        <div style="display:flex; gap:8px; width:100%; flex-wrap:wrap;">
+          <input type="text" id="buscar-borrar-prod" placeholder="🔍 Buscar producto por nombre o categoría..." style="flex:1; min-width:180px; padding:9px 12px; border:1px solid #ccc; border-radius:8px; font-size:14px; outline:none;">
+          <select id="filtro-cat-borrar" style="padding:9px 10px; border:1px solid #ccc; border-radius:8px; font-size:14px; outline:none; max-width:180px;">
+            <option value="">Todas las categorías</option>
+            ${catOptionsHtml}
+          </select>
+        </div>
+        <small id="contador-borrar-prod" style="color:#666; font-size:12px;"></small>
+
+        <div class="custom-scroll-container" id="lista-borrar" style="display:flex; flex-direction:column; gap:8px; max-height: 46vh; overflow-y: auto; width:100%; border: 1px solid #eee; border-radius: 8px; padding: 10px; box-sizing:border-box;"></div>
+        <button class="btn-cancel-del volver-btn" style="margin-top:5px; width:100%;">Cerrar</button>
       </div>
     `;
     document.body.appendChild(formOverlay);
     actualizarScrollBody();
 
+    const listaContenedor = formOverlay.querySelector("#lista-borrar");
+    const inputBuscar = formOverlay.querySelector("#buscar-borrar-prod");
+    const selectCat = formOverlay.querySelector("#filtro-cat-borrar");
+    const contador = formOverlay.querySelector("#contador-borrar-prod");
+
+    function renderizarListaBorrar() {
+      const q = normalizarTexto(inputBuscar.value.trim());
+      const catSel = selectCat.value;
+
+      const filtrados = prodConIndex.filter(p => {
+        if (catSel && p.categoria !== catSel) return false;
+        if (!q) return true;
+        return (
+          normalizarTexto(p.nombre).includes(q) ||
+          normalizarTexto(p.categoria).includes(q) ||
+          normalizarTexto(p.descripcion).includes(q)
+        );
+      });
+
+      contador.textContent = `Mostrando ${filtrados.length} de ${prodConIndex.length} productos`;
+
+      if (filtrados.length === 0) {
+        listaContenedor.innerHTML = `<p style="text-align:center; color:#888; padding:15px 0; margin:0;">No se encontraron productos con ese criterio.</p>`;
+        return;
+      }
+
+      listaContenedor.innerHTML = filtrados.map(p => `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; border-bottom:1px solid #eaeaea; padding:10px 12px; background: #fdfdfd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+          <img src="${escapeHtml(p.imagen || 'img/generico.png')}" alt="" style="width:40px; height:40px; border-radius:6px; object-fit:cover; flex-shrink:0; border:1px solid #eee;">
+          <span style="color:#333; flex:1; min-width:0;">
+            <small style="color:#888;">${escapeHtml(p.categoria)}</small><br>
+            <strong>${escapeHtml(p.nombre)}</strong><br>
+            <small style="color:#00AEEF; font-weight:bold;">C$${escapeHtml(p.precio)}</small>
+          </span>
+          <button onclick="borrarProd(${p._oIdx})" title="Eliminar producto" style="background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; padding:8px 12px; transition:0.3s; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span class="material-symbols-outlined" style="font-size:18px;">delete</span></button>
+        </div>
+      `).join("");
+    }
+
+    inputBuscar.addEventListener("input", renderizarListaBorrar);
+    selectCat.addEventListener("change", renderizarListaBorrar);
+    renderizarListaBorrar();
+    inputBuscar.focus();
+
     window.borrarProd = async (idx) => {
-      if (!confirm("¿Seguro que deseas borrar este producto permanentemente de Google Sheets?")) return;
       const borrado = productos[idx];
+      if (!borrado) return;
+      if (!confirm(`¿Seguro que deseas borrar "${borrado.nombre}" permanentemente?`)) return;
 
       try {
         await enviarPostAdmin({ action: "delete", nombre: borrado.nombre });
-        localStorage.removeItem("tech_productos_v2");
-        alert("Producto eliminado de Google Sheets.");
+        invalidarCacheProductos();
+        alert("Producto eliminado correctamente.");
         cerrarModalElemento(formOverlay);
         await cargarProductos(true);
         if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
@@ -1458,6 +1580,193 @@ if (btnEliminar) {
     };
 
     formOverlay.querySelector(".btn-cancel-del").onclick = () => cerrarModalElemento(formOverlay);
+  };
+}
+
+/* -------------------- GESTIÓN DE CATEGORÍAS (AGREGAR, EDITAR, ELIMINAR) -------------------- */
+async function abrirEditorCategorias() {
+  const categorias = await obtenerCategorias();
+  const productos = await obtenerProductos();
+
+  const formOverlay = document.createElement("div");
+  formOverlay.className = "producto-overlay";
+
+  formOverlay.innerHTML = `
+    <div class="producto-detalle-profesional" style="max-width: 550px; flex-direction: column; gap: 14px; text-align: left; padding: 28px;">
+      <h2 style="color: #6f42c1; text-align: center; margin-bottom: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <span class="material-symbols-outlined">category</span> Gestionar Categorías
+      </h2>
+      <button class="btn-agregar-cat producto-btn" style="background:#28a745; width:100%; display:flex; align-items:center; justify-content:center; gap:5px; padding:12px;">
+        <span class="material-symbols-outlined">add</span> Agregar Nueva Categoría
+      </button>
+      <input type="text" id="buscar-cat-admin" placeholder="🔍 Buscar categoría..." style="width:100%; box-sizing:border-box; padding:9px 12px; border:1px solid #ccc; border-radius:8px; font-size:14px; outline:none;">
+      <div class="custom-scroll-container" id="lista-categorias-admin" style="display:flex; flex-direction:column; gap:8px; max-height: 44vh; overflow-y: auto; width:100%; border: 1px solid #eee; border-radius: 8px; padding: 10px; box-sizing:border-box;"></div>
+      <button class="btn-cerrar-cats volver-btn" style="margin-top:5px; width:100%;">Cerrar</button>
+    </div>
+  `;
+  document.body.appendChild(formOverlay);
+  actualizarScrollBody();
+
+  const listaCats = formOverlay.querySelector("#lista-categorias-admin");
+  const inputBuscarCat = formOverlay.querySelector("#buscar-cat-admin");
+
+  function renderizarCategoriasAdmin() {
+    const q = normalizarTexto(inputBuscarCat.value.trim());
+    const filtradas = categorias
+      .map((c, idx) => ({ nombre: c.nombre, imagen: c.imagen, idx }))
+      .filter(c => !q || normalizarTexto(c.nombre).includes(q));
+
+    if (filtradas.length === 0) {
+      listaCats.innerHTML = `<p style="text-align:center; color:#888; margin:0; padding:15px 0;">No se encontraron categorías.</p>`;
+      return;
+    }
+
+    listaCats.innerHTML = filtradas.map(c => {
+      const totalProds = productos.filter(p => p.categoria === c.nombre).length;
+      const imgSrc = c.imagen || IMAGENES_CATEGORIAS[c.nombre] || "img/generico.png";
+      return `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; border-bottom:1px solid #eaeaea; padding:10px 12px; background: #fdfdfd; border-radius: 8px;">
+          <img src="${escapeHtml(imgSrc)}" alt="" style="width:40px; height:40px; border-radius:6px; object-fit:cover; flex-shrink:0; border:1px solid #eee;">
+          <span style="color:#333; flex:1; min-width:0;">
+            <strong>${escapeHtml(c.nombre)}</strong><br>
+            <small style="color:#888;">${totalProds} producto${totalProds === 1 ? "" : "s"}</small>
+          </span>
+          <div style="display:flex; gap:5px; flex-shrink:0;">
+            <button onclick="editarCategoriaAdmin(${c.idx})" title="Editar categoría" style="background:#ffc107; color:black; border:none; border-radius:6px; cursor:pointer; padding:7px 10px;"><span class="material-symbols-outlined" style="font-size:18px;">edit</span></button>
+            <button onclick="borrarCategoriaAdmin(${c.idx})" title="Eliminar categoría" style="background:#dc3545; color:white; border:none; border-radius:6px; cursor:pointer; padding:7px 10px;"><span class="material-symbols-outlined" style="font-size:18px;">delete</span></button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  inputBuscarCat.addEventListener("input", renderizarCategoriasAdmin);
+  renderizarCategoriasAdmin();
+
+  window.editarCategoriaAdmin = (idx) => {
+    cerrarModalElemento(formOverlay);
+    abrirFormularioCategoria(idx, categorias[idx]);
+  };
+
+  window.borrarCategoriaAdmin = async (idx) => {
+    const cat = categorias[idx];
+    if (!cat) return;
+    const prodsAsociados = productos.filter(p => p.categoria === cat.nombre).length;
+    const avisoExtra = prodsAsociados > 0
+      ? `\n\nNota: Actualmente hay ${prodsAsociados} producto(s) asignados a "${cat.nombre}".`
+      : "";
+    if (!confirm(`¿Seguro que deseas eliminar la categoría "${cat.nombre}"?${avisoExtra}`)) return;
+
+    categorias.splice(idx, 1);
+    await guardarCategorias(categorias);
+    await cargarCategorias();
+    cerrarModalElemento(formOverlay);
+    abrirEditorCategorias();
+  };
+
+  formOverlay.querySelector(".btn-agregar-cat").onclick = () => {
+    cerrarModalElemento(formOverlay);
+    abrirFormularioCategoria(-1, null);
+  };
+
+  formOverlay.querySelector(".btn-cerrar-cats").onclick = () => cerrarModalElemento(formOverlay);
+}
+
+async function abrirFormularioCategoria(idx, catActual) {
+  const categorias = await obtenerCategorias();
+  const esEdicion = idx >= 0;
+  const cat = catActual || { nombre: "", imagen: "" };
+  const imgValor = (cat.imagen && cat.imagen !== "img/generico.png") ? cat.imagen : "";
+
+  const formOverlay = document.createElement("div");
+  formOverlay.className = "producto-overlay";
+  formOverlay.innerHTML = `
+    <div class="producto-detalle-profesional" style="max-width: 440px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
+      <h2 style="color: #6f42c1; text-align: center; margin-bottom: 5px; width: 100%; display:flex; align-items:center; justify-content:center; gap:6px;">
+        <span class="material-symbols-outlined">${esEdicion ? "edit" : "add"}</span> ${esEdicion ? "Editar" : "Agregar"} Categoría
+      </h2>
+      
+      <div class="form-group">
+        <label for="fc-nombre">Nombre de la categoría</label>
+        <input type="text" id="fc-nombre" value="${escapeHtml(cat.nombre)}" placeholder="Ej. Parlantes Bluetooth">
+      </div>
+
+      <div class="form-group">
+        <label for="fc-imagen">Imagen de portada (URL o link de Google Drive)</label>
+        <input type="text" id="fc-imagen" value="${escapeHtml(imgValor)}" placeholder="https://... o ruta img/...">
+        <small style="color:#888;">Opcional. Los links de Google Drive se convierten automáticamente.</small>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; margin-top: 15px; width: 100%; gap:10px;">
+        <button class="btn-cancel-cat volver-btn" style="margin-top: 0;">Cancelar</button>
+        <button class="btn-save-cat producto-btn" style="margin-top: 0; margin-left: auto; background: #6f42c1;">Guardar</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(formOverlay);
+  actualizarScrollBody();
+
+  formOverlay.querySelector(".btn-cancel-cat").onclick = () => {
+    cerrarModalElemento(formOverlay);
+    abrirEditorCategorias();
+  };
+
+  formOverlay.querySelector(".btn-save-cat").onclick = async () => {
+    const nuevoNombre = document.getElementById("fc-nombre").value.trim();
+    const nuevaImgRaw = document.getElementById("fc-imagen").value.trim();
+    const nuevaImagen = nuevaImgRaw ? procesarUrlImagen(nuevaImgRaw) : (cat.imagen || "img/generico.png");
+
+    if (!nuevoNombre) return alert("El nombre de la categoría es obligatorio.");
+
+    const duplicada = categorias.some((c, i) =>
+      i !== idx && normalizarTexto(c.nombre) === normalizarTexto(nuevoNombre)
+    );
+    if (duplicada) return alert("Ya existe una categoría con ese nombre.");
+
+    const btnSave = formOverlay.querySelector(".btn-save-cat");
+    btnSave.textContent = "Guardando...";
+    btnSave.disabled = true;
+
+    const oldNombre = esEdicion ? cat.nombre : null;
+
+    if (esEdicion) {
+      categorias[idx] = { nombre: nuevoNombre, imagen: nuevaImagen };
+    } else {
+      categorias.push({ nombre: nuevoNombre, imagen: nuevaImagen });
+    }
+
+    await guardarCategorias(categorias);
+
+    // Si se renombró la categoría, actualizar también los productos en Google Sheets que tenían el nombre anterior
+    if (esEdicion && oldNombre && oldNombre !== nuevoNombre) {
+      try {
+        const productos = await obtenerProductos();
+        const afectados = productos.filter(p => p.categoria === oldNombre);
+        if (afectados.length > 0) {
+          btnSave.textContent = `Actualizando ${afectados.length} producto(s)...`;
+          for (const prod of afectados) {
+            await enviarPostAdmin({
+              action: "edit",
+              old_nombre: prod.nombre,
+              nombre: prod.nombre,
+              categoria: nuevoNombre,
+              precio: parseFloat(prod.precio),
+              descripcion: prod.descripcion,
+              imagen: prod.imagen || "img/generico.png"
+            });
+          }
+          invalidarCacheProductos();
+          await cargarProductos(true);
+          if (document.getElementById("catalogo-container").style.display === "block") cargarCatalogo();
+        }
+      } catch (e) {
+        console.warn("Error actualizando productos de la categoría renombrada:", e);
+      }
+    }
+
+    await cargarCategorias();
+    cerrarModalElemento(formOverlay);
+    abrirEditorCategorias();
   };
 }
 
@@ -1472,8 +1781,9 @@ async function abrirMenuEditarDatos() {
   formOverlay.innerHTML = `
     <div class="producto-detalle-profesional" style="max-width: 450px; flex-direction: column; gap: 15px; text-align: center; padding: 30px;">
       <h2 style="color: #17a2b8; margin-bottom: 10px; display:flex; align-items:center; justify-content:center; gap:8px;"><span class="material-symbols-outlined">settings</span> Editar Configuraciones</h2>
-      <p style="color: #555; margin-bottom: 20px;">¿Qué apartado deseas modificar?</p>
+      <p style="color: #555; margin-bottom: 15px;">¿Qué apartado deseas modificar?</p>
       
+      <button class="btn-menu-cats producto-btn" style="background: #6f42c1; display:flex; align-items:center; justify-content:center; gap:8px;"><span class="material-symbols-outlined">category</span> Categorías de Productos</button>
       <button class="btn-menu-info producto-btn" style="background: #17a2b8; display:flex; align-items:center; justify-content:center; gap:8px;"><span class="material-symbols-outlined">storefront</span> Información del Negocio</button>
       <button class="btn-menu-faqs producto-btn" style="background: #007bff; display:flex; align-items:center; justify-content:center; gap:8px;"><span class="material-symbols-outlined">quiz</span> Preguntas Frecuentes</button>
       <button class="btn-menu-redes producto-btn" style="background: #e83e8c; display:flex; align-items:center; justify-content:center; gap:8px;"><span class="material-symbols-outlined">share</span> Redes Sociales (Footer)</button>
@@ -1485,6 +1795,7 @@ async function abrirMenuEditarDatos() {
   actualizarScrollBody();
 
   formOverlay.querySelector(".btn-cancel-menu").onclick = () => cerrarModalElemento(formOverlay);
+  formOverlay.querySelector(".btn-menu-cats").onclick = () => { cerrarModalElemento(formOverlay); abrirEditorCategorias(); };
   formOverlay.querySelector(".btn-menu-info").onclick = () => { cerrarModalElemento(formOverlay); abrirEditorInfo(); };
   formOverlay.querySelector(".btn-menu-redes").onclick = () => { cerrarModalElemento(formOverlay); abrirEditorRedes(); };
   formOverlay.querySelector(".btn-menu-faqs").onclick = () => { cerrarModalElemento(formOverlay); abrirEditorFAQs(); };
@@ -1746,43 +2057,97 @@ async function abrirFormularioFaq(idx, faqActual) {
   };
 }
 
-/* -------------------- EDITAR PRODUCTO -------------------- */
+/* -------------------- EDITAR PRODUCTO (CON BUSCADOR Y FILTRO) -------------------- */
 if (btnEditarProd) {
   btnEditarProd.onclick = async () => {
-    const productos = await obtenerProductos();
+    const productos = await obtenerProductos(true);
+    const categorias = await obtenerCategorias();
 
     const formOverlay = document.createElement("div");
     formOverlay.className = "producto-overlay";
 
     const prodConIndex = productos.map((p, i) => Object.assign({}, p, { _oIdx: i }));
     prodConIndex.sort((a, b) => {
-      if (a.categoria === b.categoria) return a.nombre.localeCompare(b.nombre);
-      return a.categoria.localeCompare(b.categoria);
+      if (a.categoria === b.categoria) return String(a.nombre).localeCompare(String(b.nombre));
+      return String(a.categoria).localeCompare(String(b.categoria));
     });
 
-    const htmlList = prodConIndex.map(p => `
-      <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #eaeaea; padding:12px 15px; background: #fdfdfd; border-radius: 8px; margin-bottom: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-        <span style="color:#333;"><small style="color:#888;">${escapeHtml(p.categoria)}</small><br><strong>${escapeHtml(p.nombre)}</strong> <br> <small style="color:#00AEEF; font-weight:bold;">C$${escapeHtml(p.precio)}</small></span>
-        <button onclick="editarProd(${p._oIdx})" style="background:#ffc107; color:black; border:none; border-radius:6px; cursor:pointer; padding:8px 12px; transition:0.3s; display:flex; align-items:center; justify-content:center;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1"><span class="material-symbols-outlined" style="font-size:18px;">edit</span></button>
-      </div>
-    `).join("");
+    const catOptionsHtml = categorias.map(c =>
+      `<option value="${escapeHtml(c.nombre)}">${escapeHtml(c.nombre)}</option>`
+    ).join("");
 
     formOverlay.innerHTML = `
-      <div class="producto-detalle-profesional" style="max-width: 500px; flex-direction: column; gap: 15px; text-align: left; padding: 30px;">
+      <div class="producto-detalle-profesional" style="max-width: 550px; flex-direction: column; gap: 12px; text-align: left; padding: 28px;">
         <h2 style="color: #ffc107; text-align: center; margin-bottom: 0; width: 100%; display: flex; align-items: center; justify-content: center; gap: 5px;"><span class="material-symbols-outlined">edit</span> Editar Producto</h2>
-        <div class="custom-scroll-container" id="lista-editar" style="display:flex; flex-direction:column; gap:8px; max-height: 50vh; overflow-y: auto; padding-right: 10px; border: 1px solid #eee; border-radius: 8px; padding: 10px;">${htmlList}</div>
-        <button class="btn-cancel-edit volver-btn" style="margin-top:10px; width:100%;">Cerrar</button>
+        
+        <div style="display:flex; gap:8px; width:100%; flex-wrap:wrap;">
+          <input type="text" id="buscar-editar-prod" placeholder="🔍 Buscar producto por nombre o categoría..." style="flex:1; min-width:180px; padding:9px 12px; border:1px solid #ccc; border-radius:8px; font-size:14px; outline:none;">
+          <select id="filtro-cat-editar" style="padding:9px 10px; border:1px solid #ccc; border-radius:8px; font-size:14px; outline:none; max-width:180px;">
+            <option value="">Todas las categorías</option>
+            ${catOptionsHtml}
+          </select>
+        </div>
+        <small id="contador-editar-prod" style="color:#666; font-size:12px;"></small>
+
+        <div class="custom-scroll-container" id="lista-editar" style="display:flex; flex-direction:column; gap:8px; max-height: 46vh; overflow-y: auto; width:100%; border: 1px solid #eee; border-radius: 8px; padding: 10px; box-sizing:border-box;"></div>
+        <button class="btn-cancel-edit volver-btn" style="margin-top:5px; width:100%;">Cerrar</button>
       </div>
     `;
     document.body.appendChild(formOverlay);
     actualizarScrollBody();
 
-    window.editarProd = (idx) => {
-      const p = productos[idx];
-      const imgActual = (p.imagen && p.imagen !== "img/generico.png") ? p.imagen : "";
+    const listaContenedor = formOverlay.querySelector("#lista-editar");
+    const inputBuscar = formOverlay.querySelector("#buscar-editar-prod");
+    const selectCat = formOverlay.querySelector("#filtro-cat-editar");
+    const contador = formOverlay.querySelector("#contador-editar-prod");
 
-      const catBtnsHtmlEdi = CATEGORIAS_BD.map(cat =>
-        `<button type="button" class="cat-btn${cat === p.categoria ? ' cat-btn-active' : ''}" data-cat="${escapeHtml(cat)}">${escapeHtml(cat)}</button>`
+    function renderizarListaEditar() {
+      const q = normalizarTexto(inputBuscar.value.trim());
+      const catSel = selectCat.value;
+
+      const filtrados = prodConIndex.filter(p => {
+        if (catSel && p.categoria !== catSel) return false;
+        if (!q) return true;
+        return (
+          normalizarTexto(p.nombre).includes(q) ||
+          normalizarTexto(p.categoria).includes(q) ||
+          normalizarTexto(p.descripcion).includes(q)
+        );
+      });
+
+      contador.textContent = `Mostrando ${filtrados.length} de ${prodConIndex.length} productos`;
+
+      if (filtrados.length === 0) {
+        listaContenedor.innerHTML = `<p style="text-align:center; color:#888; padding:15px 0; margin:0;">No se encontraron productos con ese criterio.</p>`;
+        return;
+      }
+
+      listaContenedor.innerHTML = filtrados.map(p => `
+        <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; border-bottom:1px solid #eaeaea; padding:10px 12px; background: #fdfdfd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+          <img src="${escapeHtml(p.imagen || 'img/generico.png')}" alt="" style="width:40px; height:40px; border-radius:6px; object-fit:cover; flex-shrink:0; border:1px solid #eee;">
+          <span style="color:#333; flex:1; min-width:0;">
+            <small style="color:#888;">${escapeHtml(p.categoria)}</small><br>
+            <strong>${escapeHtml(p.nombre)}</strong><br>
+            <small style="color:#00AEEF; font-weight:bold;">C$${escapeHtml(p.precio)}</small>
+          </span>
+          <button onclick="editarProd(${p._oIdx})" title="Editar producto" style="background:#ffc107; color:black; border:none; border-radius:6px; cursor:pointer; padding:8px 12px; transition:0.3s; display:flex; align-items:center; justify-content:center; flex-shrink:0;"><span class="material-symbols-outlined" style="font-size:18px;">edit</span></button>
+        </div>
+      `).join("");
+    }
+
+    inputBuscar.addEventListener("input", renderizarListaEditar);
+    selectCat.addEventListener("change", renderizarListaEditar);
+    renderizarListaEditar();
+    inputBuscar.focus();
+
+    window.editarProd = async (idx) => {
+      const p = productos[idx];
+      if (!p) return;
+      const imgActual = (p.imagen && p.imagen !== "img/generico.png") ? p.imagen : "";
+      const catsActuales = await obtenerCategorias();
+
+      const catBtnsHtmlEdi = catsActuales.map(c =>
+        `<button type="button" class="cat-btn${c.nombre === p.categoria ? ' cat-btn-active' : ''}" data-cat="${escapeHtml(c.nombre)}">${escapeHtml(c.nombre)}</button>`
       ).join("");
 
       const formEdit = document.createElement("div");
@@ -1794,7 +2159,10 @@ if (btnEditarProd) {
           <div class="form-group"><label for="edi-nombre">Nombre</label><input type="text" id="edi-nombre" value="${escapeHtml(p.nombre)}"></div>
 
           <div class="form-group">
-            <label>Categoría &nbsp;<span id="edi-cat-label" style="color:#00AEEF; font-size:13px;">${p.categoria ? '✓ ' + escapeHtml(p.categoria) : ''}</span></label>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <label>Categoría &nbsp;<span id="edi-cat-label" style="color:#00AEEF; font-size:13px;">${p.categoria ? '✓ ' + escapeHtml(p.categoria) : ''}</span></label>
+              <button type="button" class="btn-ir-categorias-edi" style="background:transparent; border:none; color:#6f42c1; font-size:12px; font-weight:bold; cursor:pointer; padding:2px 6px;"><span class="material-symbols-outlined" style="font-size:15px;">category</span> Gestionar categorías</button>
+            </div>
             <input type="hidden" id="edi-categoria" value="${escapeHtml(p.categoria)}">
             <div class="cat-picker">${catBtnsHtmlEdi}</div>
           </div>
@@ -1816,6 +2184,12 @@ if (btnEditarProd) {
       `;
       document.body.appendChild(formEdit);
       actualizarScrollBody();
+
+      formEdit.querySelector(".btn-ir-categorias-edi").onclick = () => {
+        cerrarModalElemento(formEdit);
+        cerrarModalElemento(formOverlay);
+        abrirEditorCategorias();
+      };
 
       formEdit.querySelectorAll(".cat-btn").forEach(btn => {
         btn.addEventListener("click", () => {
@@ -1849,8 +2223,8 @@ if (btnEditarProd) {
             descripcion: ediDesc,
             imagen: ediImagen || p.imagen || "img/generico.png"
           });
-          localStorage.removeItem("tech_productos_v2");
-          alert("Producto modificado en Google Sheets.");
+          invalidarCacheProductos();
+          alert("Producto modificado correctamente.");
           cerrarModalElemento(formEdit);
           cerrarModalElemento(formOverlay);
           await cargarProductos(true);
