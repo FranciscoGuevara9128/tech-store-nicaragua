@@ -1,4 +1,4 @@
-// -------------------- DATOS LOCALES --------------------
+// -------------------- DATOS LOCALES Y CATÁLOGO --------------------
 const CATEGORIAS_BD = [
   "Auriculares Gamer",
   "Multimedia",
