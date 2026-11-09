@@ -454,7 +454,13 @@ async function obtenerProductos(forzarRecarga = false) {
       if (res.ok) {
         let products = await res.json();
         if (Array.isArray(products) && products.length > 0) {
-          products = products.map(p => {
+          const vistos = new Set();
+          products = products.filter(p => {
+            const clave = String(p.nombre || "").trim().toLowerCase();
+            if (!clave || vistos.has(clave)) return false;
+            vistos.add(clave);
+            return true;
+          }).map(p => {
             p.precio = parseFloat(p.precio) || 0;
             return p;
           });
@@ -1278,10 +1284,15 @@ if (btnRecargarCache) {
       btnRecargarCache.disabled = true;
       (async () => {
         try {
-          const products = JSON.parse(JSON.stringify(PRODUCTOS_BD));
-          await enviarPostAdmin({ action: "sync_all", products });
+          const actuales = await obtenerProductos(true);
+          const nombresActuales = new Set(actuales.map(p => String(p.nombre || "").trim().toLowerCase()));
+          const faltantes = PRODUCTOS_BD.filter(p => !nombresActuales.has(String(p.nombre || "").trim().toLowerCase()));
+          if (faltantes.length > 0) {
+            await enviarPostAdmin({ action: "sync_all", products: faltantes });
+          }
+          await sincronizarConfigRemota();
           invalidarCacheProductos();
-          alert("Sincronización completa. Se recargará el catálogo.");
+          alert(faltantes.length > 0 ? `Se restauraron ${faltantes.length} producto(s) faltante(s) en el Excel.` : "El Excel ya tiene todos los productos sincronizados. Se actualizó la caché.");
           location.reload();
         } catch (err) {
           alert("Error al sincronizar: " + err.message);
