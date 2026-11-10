@@ -902,7 +902,7 @@ function mostrarProducto(product) {
   overlay.innerHTML = `
     <div class="producto-detalle-profesional">
       <div class="detalle-imagen">
-        <img src="${escapeHtml(product.imagen || 'img/generico.png')}" alt="${escapeHtml(product.nombre)}" style="aspect-ratio:1/1; object-fit:cover; width:100%; max-width:350px; border-radius:15px; border: 1px solid #eee; background: white;">
+        <img src="${escapeHtml(product.imagen || 'img/generico.png')}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='img/generico.png';" alt="${escapeHtml(product.nombre)}" style="aspect-ratio:1/1; object-fit:cover; width:100%; max-width:350px; border-radius:15px; border: 1px solid #eee; background: white;">
       </div>
 
       <div class="detalle-info">
@@ -1010,7 +1010,7 @@ async function cargarCategorias() {
       const imgSrc = catObj.imagen || IMAGENES_CATEGORIAS[categoria] || "img/generico.png";
 
       card.innerHTML = `
-        <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(categoria)} - Tech Store Nicaragua" loading="lazy" style="aspect-ratio: 1/1; object-fit: cover; width: 100%; border-radius: 10px 10px 0 0;">
+        <img src="${escapeHtml(imgSrc)}" alt="${escapeHtml(categoria)} - Tech Store Nicaragua" loading="lazy" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='img/generico.png';" style="aspect-ratio: 1/1; object-fit: cover; width: 100%; border-radius: 10px 10px 0 0;">
         <h3>${escapeHtml(categoria)}</h3>
       `;
 
@@ -1046,7 +1046,7 @@ async function cargarProductos(forzarRecarga = false) {
       card.setAttribute("itemtype", "https://schema.org/Product");
 
       card.innerHTML = `
-        <img src="${escapeHtml(product.imagen || 'img/generico.png')}" alt="${escapeHtml(product.nombre)} - ${escapeHtml(product.categoria)} en Nicaragua" loading="lazy" style="aspect-ratio:1/1; object-fit:cover; width:100%; border-radius:15px; border: 1px solid #eee; background: white;" itemprop="image">
+        <img src="${escapeHtml(product.imagen || 'img/generico.png')}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='img/generico.png';" alt="${escapeHtml(product.nombre)} - ${escapeHtml(product.categoria)} en Nicaragua" loading="lazy" style="aspect-ratio:1/1; object-fit:cover; width:100%; border-radius:15px; border: 1px solid #eee; background: white;" itemprop="image">
         <h3 itemprop="name">${escapeHtml(product.nombre)}</h3>
         <p class="categoria" itemprop="category">${escapeHtml(product.categoria)}</p>
         <p class="descripcion" itemprop="description">${escapeHtml(product.descripcion)}</p>
@@ -1187,7 +1187,7 @@ async function cargarCatalogo(categoria = undefined, buscar = undefined) {
         card.setAttribute("itemtype", "https://schema.org/Product");
 
         card.innerHTML = `
-          <img src="${escapeHtml(product.imagen || 'img/generico.png')}" alt="${escapeHtml(product.nombre)} - ${escapeHtml(product.categoria)} en Nicaragua | Tech Store Nicaragua" loading="lazy" style="aspect-ratio: 1/1; object-fit: cover; width: 100%; border-radius: 8px;" itemprop="image">
+          <img src="${escapeHtml(product.imagen || 'img/generico.png')}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='img/generico.png';" alt="${escapeHtml(product.nombre)} - ${escapeHtml(product.categoria)} en Nicaragua | Tech Store Nicaragua" loading="lazy" style="aspect-ratio: 1/1; object-fit: cover; width: 100%; border-radius: 8px;" itemprop="image">
           <h3 itemprop="name">${escapeHtml(product.nombre)}</h3>
           <p class="categoria" itemprop="category">${escapeHtml(product.categoria)}</p>
           <p class="descripcion" itemprop="description">${escapeHtml(product.descripcion)}</p>
@@ -1435,7 +1435,7 @@ if (btnAgregar) {
         <div class="form-group">
           <label for="add-imagen">Imagen — URL o link de Google Drive</label>
           <input type="text" id="add-imagen" placeholder="https://... o link de compartir de Drive">
-          <small style="color:#888; margin-top:4px; display:block;">Los links de Google Drive se convierten automáticamente.</small>
+          <small style="color:#888; margin-top:4px; display:block;">Los links de Drive se convierten solos (en Drive debe estar en 'Cualquier persona con el enlace').</small>
         </div>
 
         <div style="display: flex; justify-content: space-between; margin-top: 10px; width: 100%;">
@@ -1565,7 +1565,7 @@ if (btnEliminar) {
 
       listaContenedor.innerHTML = filtrados.map(p => `
         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; border-bottom:1px solid #eaeaea; padding:10px 12px; background: #fdfdfd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-          <img src="${escapeHtml(p.imagen || 'img/generico.png')}" alt="" style="width:40px; height:40px; border-radius:6px; object-fit:cover; flex-shrink:0; border:1px solid #eee;">
+          <img src="${escapeHtml(p.imagen || 'img/generico.png')}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='img/generico.png';" alt="" style="width:40px; height:40px; border-radius:6px; object-fit:cover; flex-shrink:0; border:1px solid #eee;">
           <span style="color:#333; flex:1; min-width:0;">
             <small style="color:#888;">${escapeHtml(p.categoria)}</small><br>
             <strong>${escapeHtml(p.nombre)}</strong><br>
@@ -1714,7 +1714,7 @@ async function abrirFormularioCategoria(idx, catActual) {
       <div class="form-group">
         <label for="fc-imagen">Imagen de portada (URL o link de Google Drive)</label>
         <input type="text" id="fc-imagen" value="${escapeHtml(imgValor)}" placeholder="https://... o ruta img/...">
-        <small style="color:#888;">Opcional. Los links de Google Drive se convierten automáticamente.</small>
+        <small style="color:#888;">Opcional. Los links de Drive se convierten solos (en Drive debe estar en 'Cualquier persona con el enlace').</small>
       </div>
 
       <div style="display: flex; justify-content: space-between; margin-top: 15px; width: 100%; gap:10px;">
@@ -2144,7 +2144,7 @@ if (btnEditarProd) {
 
       listaContenedor.innerHTML = filtrados.map(p => `
         <div style="display:flex; justify-content:space-between; align-items:center; gap:10px; border-bottom:1px solid #eaeaea; padding:10px 12px; background: #fdfdfd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-          <img src="${escapeHtml(p.imagen || 'img/generico.png')}" alt="" style="width:40px; height:40px; border-radius:6px; object-fit:cover; flex-shrink:0; border:1px solid #eee;">
+          <img src="${escapeHtml(p.imagen || 'img/generico.png')}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='img/generico.png';" alt="" style="width:40px; height:40px; border-radius:6px; object-fit:cover; flex-shrink:0; border:1px solid #eee;">
           <span style="color:#333; flex:1; min-width:0;">
             <small style="color:#888;">${escapeHtml(p.categoria)}</small><br>
             <strong>${escapeHtml(p.nombre)}</strong><br>
@@ -2193,7 +2193,7 @@ if (btnEditarProd) {
           <div class="form-group">
             <label for="edi-imagen">Imagen — URL o link de Google Drive</label>
             <input type="text" id="edi-imagen" value="${escapeHtml(imgActual)}" placeholder="https://... o link de compartir de Drive">
-            <small style="color:#888; margin-top:4px; display:block;">Los links de Google Drive se convierten automáticamente.</small>
+            <small style="color:#888; margin-top:4px; display:block;">Los links de Drive se convierten solos (en Drive debe estar en 'Cualquier persona con el enlace').</small>
           </div>
 
           <div style="display: flex; justify-content: space-between; margin-top: 10px; width: 100%;">
